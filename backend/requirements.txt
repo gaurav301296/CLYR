@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+pdfplumber
+reportlab
+pytest
+httpx
+python-multipart
+openai

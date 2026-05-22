@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dsa/
+
+Sitemap: https://clyr.in/sitemap.xml

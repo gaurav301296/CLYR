@@ -1,0 +1,13 @@
+{
+  "name": "CLYR - Credit Report Clarity",
+  "short_name": "CLYR",
+  "description": "AI-powered credit report analysis and recovery roadmap",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "/icons.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
