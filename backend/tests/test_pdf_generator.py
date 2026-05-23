@@ -1,49 +1,46 @@
 import os
 import pytest
-from app.utils.pdf_generator import create_report_pdf
+from app.utils.pdf_generator import create_letter_pdf
 
-def test_create_report_pdf_file_creation(tmp_path):
-    output_path = os.path.join(tmp_path, "test_report.pdf")
+
+def test_create_letter_pdf_file_creation(tmp_path):
+    output_path = os.path.join(tmp_path, "test_letter.pdf")
     data = {
+        "letter": "GREETING: राजेश जी,\n\nINTRO: आपका स्कोर 620 है — इसमें सुधार चाहिए।\n\nISSUE #1: HDFC क्रेडिट कार्ड\nWHAT: ₹45,000 का Written Off दिख रहा है\nIMPACT: इससे स्कोर 40-50 अंक कम है\nACTION: HDFC बैंक से NOC लें और CIBIL पर dispute करें\nTIMELINE: 30-45 दिन\nSUCCESS_CHANCE: High\n\nSCORE_PROJECTION:\nCurrent: 620\nAfter fixing all issues: 660-680\nTimeline: 90 दिन\n\nCLOSING: चिंता न करें, ये ठीक हो सकता है।\n\nDISPUTE_LETTERS:\nTo: HDFC Bank\nSubject: Request for NOC\nDear Sir, ...",
+        "language": "hi",
         "score": 620,
         "customer_name": "Rajesh Kumar",
-        "general_health": "Needs Attention",
-        "issues": [
-            {"account": "HDFC Card", "type": "Red", "details": "Written off ₹45,000", "action": "Contact bank", "impact": "High"}
-        ],
-        "action_steps": ["Step 1", "Step 2"],
-        "timeline": [
-            {"phase": "Month 1", "task": "Resolve HDFC Settlement", "status": "Critical"}
-        ]
     }
-    create_report_pdf(data, output_path)
+    create_letter_pdf(data, output_path)
     assert os.path.exists(output_path)
+    assert os.path.getsize(output_path) > 1000
 
-def test_create_report_pdf_hindi(tmp_path):
-    output_path = os.path.join(tmp_path, "test_report_hi.pdf")
+
+def test_create_letter_pdf_english(tmp_path):
+    output_path = os.path.join(tmp_path, "test_letter_en.pdf")
     data = {
+        "letter": "GREETING: Dear John,\n\nINTRO: Your score is 780 — this is great!\n\nSCORE_PROJECTION:\nCurrent: 780\nAfter fixing all issues: 780-800\nTimeline: N/A\n\nCLOSING: Keep up the good work!\n\nDISPUTE_LETTERS:\nNone needed.",
+        "language": "en",
         "score": 780,
-        "customer_name": "राजेश कुमार",
-        "general_health": "उत्कृष्ट",
-        "issues": [],
-        "action_steps": ["समय पर भुगतान करें"],
-        "timeline": []
+        "customer_name": "John Doe",
     }
-    create_report_pdf(data, output_path, language="hi")
+    create_letter_pdf(data, output_path)
     assert os.path.exists(output_path)
+    assert os.path.getsize(output_path) > 1000
 
-def test_create_report_pdf_tamil(tmp_path):
-    output_path = os.path.join(tmp_path, "test_report_ta.pdf")
+
+def test_create_letter_pdf_tamil(tmp_path):
+    output_path = os.path.join(tmp_path, "test_letter_ta.pdf")
     data = {
+        "letter": "GREETING: ராஜேஷ் அவர்களே,\n\nINTRO: உங்கள் ஸ்கோர் 780 — இது மிகவும் நல்லது!\n\nSCORE_PROJECTION:\nCurrent: 780\nAfter fixing all issues: 780-800\nTimeline: N/A\n\nCLOSING: தொடர்ந்து நல்ல பழக்கத்தை பின்பற்றுங்கள்!\n\nDISPUTE_LETTERS:\nNone needed.",
+        "language": "ta",
         "score": 780,
         "customer_name": "ராஜேஷ் குமார்",
-        "general_health": "சிறந்தது",
-        "issues": [],
-        "action_steps": ["நெறிமுறைகளைப் பின்பற்றவும்"],
-        "timeline": []
     }
-    create_report_pdf(data, output_path, language="ta")
+    create_letter_pdf(data, output_path)
     assert os.path.exists(output_path)
+    assert os.path.getsize(output_path) > 1000
+
 
 def test_font_manager_recovers_from_corrupt_or_empty_font():
     from app.utils.font_manager import ensure_fonts, FONTS_DIR, _registered_fonts

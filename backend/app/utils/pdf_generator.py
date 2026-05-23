@@ -1,29 +1,41 @@
+"""
+CLYR PDF Generator — Produces a personalized vernacular credit analysis letter.
+
+Output: A PDF that looks like a personal letter from a smart friend who works in banking.
+Not a formal report. Not a dashboard. A letter.
+"""
+
 import os
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether, PageBreak
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
 
 from app.utils.font_manager import get_font_names
-from app.i18n.translations import PDF_LABELS
 from app.utils.sanitization import sanitize_pdf_text
 
-def create_report_pdf(data: dict, output_path: str, language: str = "en"):
-    """
-    Generates a premium, high-fidelity PDF credit summary and recovery roadmap.
-    """
-    # Normalize language code
-    language = language.lower().strip() if language else "en"
-    if language not in PDF_LABELS:
-        language = "en"
 
-    # Get resolved fonts for the current language
+def create_letter_pdf(letter_data: dict, output_path: str):
+    """
+    Generate a personalized credit analysis letter as a PDF.
+    
+    letter_data should contain:
+    - letter: The full letter text (from LLM or regex fallback)
+    - language: Language code (en, hi, bn, te, mr, ta, gu, kn, ml, pa)
+    - score: Credit score
+    - customer_name: Customer name
+    """
+    language = letter_data.get("language", "en").lower().strip()
+    letter_text = letter_data.get("letter", "")
+    score = letter_data.get("score", 0)
+    customer_name = letter_data.get("customer_name", "Customer")
+
+    # Get fonts for the language
     reg_font, bold_font = get_font_names(language)
 
-    # Create the document with A4 size and 0.5 inch (36 points) margins for clean space utilization
-    margin = 36
+    margin = 40
     doc = SimpleDocTemplate(
         output_path,
         pagesize=A4,
@@ -32,290 +44,341 @@ def create_report_pdf(data: dict, output_path: str, language: str = "en"):
         topMargin=margin,
         bottomMargin=margin
     )
-    
-    # Base width calculations
-    # A4 width = 595.27. Printable width = 595.27 - 72 = 523.27
-    printable_width = 523.27
-    
+
+    printable_width = 595.27 - (2 * margin)
+
+    # Color palette — warm, friendly, not corporate
+    text_dark = colors.HexColor("#1a1a2e")      # Near-black for body
+    text_mid = colors.HexColor("#4a4a68")        # Gray for secondary
+    accent_warm = colors.HexColor("#e85d04")     # Warm orange for highlights
+    accent_blue = colors.HexColor("#2563eb")     # Blue for links/actions
+    bg_warm = colors.HexColor("#fff8f0")         # Warm cream for boxes
+    bg_blue = colors.HexColor("#eff6ff")         # Light blue for info boxes
+    border_color = colors.HexColor("#e0d6cc")    # Warm border
+
     styles = getSampleStyleSheet()
-    
-    # Custom Premium Color Palette
-    primary_color = colors.HexColor("#0F172A")    # Deep Slate / Dark Navy
-    secondary_color = colors.HexColor("#475569")  # Slate Gray
-    accent_blue = colors.HexColor("#2563EB")      # Premium Royal Blue
-    background_light = colors.HexColor("#F8FAFC") # Soft Off-White
-    border_color = colors.HexColor("#E2E8F0")     # Light Slate border
-    
-    color_red = colors.HexColor("#DC2626")        # Rich Red
-    color_yellow = colors.HexColor("#D97706")     # Warm Amber/Yellow
-    color_green = colors.HexColor("#16A34A")      # Safe Green
-    
-    bg_red = colors.HexColor("#FEF2F2")
-    bg_yellow = colors.HexColor("#FEF3C7")
-    bg_green = colors.HexColor("#ECFDF5")
-    
-    # Custom Typography Styles using dynamically resolved fonts
-    style_title = ParagraphStyle(
-        'DocTitle',
+
+    # Letter-style heading (like a personal letter)
+    style_heading = ParagraphStyle(
+        'LetterHeading',
         parent=styles['Normal'],
         fontName=bold_font,
-        fontSize=24,
-        leading=28,
-        textColor=primary_color,
-        spaceAfter=4
+        fontSize=18,
+        leading=24,
+        textColor=text_dark,
+        spaceAfter=4,
+        alignment=TA_LEFT,
     )
-    
-    style_subtitle = ParagraphStyle(
-        'DocSubtitle',
+
+    style_subheading = ParagraphStyle(
+        'LetterSubheading',
         parent=styles['Normal'],
         fontName=reg_font,
         fontSize=10,
         leading=14,
-        textColor=secondary_color,
-        spaceAfter=15
+        textColor=text_mid,
+        spaceAfter=20,
+        alignment=TA_LEFT,
     )
-    
-    style_h1 = ParagraphStyle(
-        'SectionHeading',
+
+    style_body = ParagraphStyle(
+        'LetterBody',
+        parent=styles['Normal'],
+        fontName=reg_font,
+        fontSize=11,
+        leading=17,
+        textColor=text_dark,
+        spaceAfter=10,
+        alignment=TA_LEFT,
+    )
+
+    style_bold = ParagraphStyle(
+        'LetterBold',
+        parent=style_body,
+        fontName=bold_font,
+    )
+
+    style_issue_title = ParagraphStyle(
+        'IssueTitle',
+        parent=styles['Normal'],
+        fontName=bold_font,
+        fontSize=13,
+        leading=18,
+        textColor=accent_warm,
+        spaceBefore=16,
+        spaceAfter=6,
+        alignment=TA_LEFT,
+    )
+
+    style_action = ParagraphStyle(
+        'ActionStep',
+        parent=styles['Normal'],
+        fontName=reg_font,
+        fontSize=10,
+        leading=15,
+        textColor=text_dark,
+        leftIndent=20,
+        spaceAfter=4,
+        alignment=TA_LEFT,
+    )
+
+    style_box_label = ParagraphStyle(
+        'BoxLabel',
+        parent=styles['Normal'],
+        fontName=bold_font,
+        fontSize=9,
+        leading=12,
+        textColor=text_mid,
+        alignment=TA_LEFT,
+    )
+
+    style_box_value = ParagraphStyle(
+        'BoxValue',
         parent=styles['Normal'],
         fontName=bold_font,
         fontSize=14,
         leading=18,
-        textColor=primary_color,
-        spaceBefore=14,
-        spaceAfter=8,
-        keepWithNext=True
+        textColor=text_dark,
+        alignment=TA_LEFT,
     )
-    
-    style_body = ParagraphStyle(
-        'BodyTextCustom',
+
+    style_disclaimer = ParagraphStyle(
+        'Disclaimer',
         parent=styles['Normal'],
         fontName=reg_font,
-        fontSize=10,
-        leading=14,
-        textColor=primary_color
+        fontSize=8,
+        leading=12,
+        textColor=text_mid,
+        spaceAfter=6,
+        alignment=TA_LEFT,
     )
-    
-    style_body_bold = ParagraphStyle(
-        'BodyTextBoldCustom',
-        parent=style_body,
-        fontName=bold_font
-    )
-    
-    style_body_muted = ParagraphStyle(
-        'BodyTextMutedCustom',
-        parent=style_body,
+
+    style_closing = ParagraphStyle(
+        'Closing',
+        parent=styles['Normal'],
         fontName=reg_font,
-        fontSize=9,
-        leading=13,
-        textColor=secondary_color
+        fontSize=11,
+        leading=17,
+        textColor=text_dark,
+        spaceBefore=16,
+        spaceAfter=6,
+        alignment=TA_LEFT,
     )
-    
-    style_bullet = ParagraphStyle(
-        'BulletCustom',
-        parent=style_body,
-        leftIndent=15,
-        firstLineIndent=-10,
-        spaceAfter=4
-    )
-    
+
     story = []
-    
-    # --- HEADER SECTION ---
+
+    # ── HEADER ──────────────────────────────────────────────────────────
+    # CLYR branding — small, clean, not corporate
     header_data = [
         [
-            Paragraph(PDF_LABELS[language]['brand'], style_title),
-            Paragraph(f"<b>{PDF_LABELS[language]['client_report']}</b><br/>{PDF_LABELS[language]['confidential']}", ParagraphStyle('RightHeader', parent=style_body, alignment=TA_RIGHT, fontSize=9, textColor=secondary_color))
+            Paragraph("CLYR", ParagraphStyle('Brand', parent=styles['Normal'], fontName=bold_font, fontSize=16, textColor=accent_warm)),
+            Paragraph(
+                f"Credit Analysis — {datetime.now().strftime('%B %Y')}",
+                ParagraphStyle('Date', parent=styles['Normal'], fontName=reg_font, fontSize=9, textColor=text_mid, alignment=TA_LEFT)
+            ),
         ]
     ]
-    header_table = Table(header_data, colWidths=[printable_width * 0.6, printable_width * 0.4])
+    header_table = Table(header_data, colWidths=[printable_width * 0.5, printable_width * 0.5])
     header_table.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
     ]))
     story.append(header_table)
-    story.append(Paragraph(PDF_LABELS[language]['subtitle'], style_subtitle))
-    
-    # Decorative colored accent line
-    divider = Table([[""]], colWidths=[printable_width], rowHeights=[2])
-    divider.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (0,0), accent_blue),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-        ('TOPPADDING', (0,0), (-1,-1), 0),
-    ]))
-    story.append(divider)
-    story.append(Spacer(1, 15))
-    
-    # --- CLIENT & SCORE OVERVIEW BLOCK ---
-    score = data.get("score", 300)
-    customer_name = sanitize_pdf_text(data.get("customer_name", "Valued Customer"))
-    general_health = sanitize_pdf_text(data.get("general_health", "N/A"))
-    
-    # Decide score colors
-    if score >= 750:
-        score_color = color_green
-        score_bg = bg_green
-    elif score >= 700:
-        score_color = colors.HexColor("#2563EB")
-        score_bg = colors.HexColor("#EFF6FF")
-    elif score >= 620:
-        score_color = color_yellow
-        score_bg = bg_yellow
-    else:
-        score_color = color_red
-        score_bg = bg_red
-        
-    score_p = Paragraph(f"<font size=10 color='#475569'>{PDF_LABELS[language]['current_score']}</font><br/><font size=36 color='{score_color.hexval()}'><b>{score}</b></font><br/><font size=11 color='{score_color.hexval()}'><b>{general_health}</b></font>", ParagraphStyle('ScorePara', parent=style_body, alignment=TA_CENTER, leading=20))
-    client_info_text = (
-        f"<b>{PDF_LABELS[language]['client_name']}:</b> {customer_name}<br/>"
-        f"<b>{PDF_LABELS[language]['analysis_date']}:</b> {datetime.now().strftime('%Y-%m-%d')}<br/>"
-        f"<b>{PDF_LABELS[language]['report_id']}:</b> CS-{score}-{abs(hash(customer_name)) % 10000:04d}<br/>"
-        f"<b>{PDF_LABELS[language]['scope']}:</b> {PDF_LABELS[language]['scope_desc']}"
-    )
-    client_info_p = Paragraph(client_info_text, ParagraphStyle('ClientInfoPara', parent=style_body, leading=16))
-    
-    overview_table_data = [
-        [score_p, client_info_p]
-    ]
-    overview_table = Table(overview_table_data, colWidths=[printable_width * 0.4, printable_width * 0.6])
-    overview_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (0,0), score_bg),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('BOX', (0,0), (-1,-1), 1, border_color),
-        ('INNERGRID', (0,0), (-1,-1), 1, border_color),
-        ('TOPPADDING', (0,0), (-1,-1), 12),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 12),
-        ('LEFTPADDING', (0,0), (-1,-1), 16),
-        ('RIGHTPADDING', (0,0), (-1,-1), 16),
-    ]))
-    story.append(overview_table)
-    story.append(Spacer(1, 15))
-    
-    # --- CRITICAL ISSUES ("WHAT IS BROKEN") ---
-    issues = data.get("issues", [])
-    if issues:
-        story.append(Paragraph(PDF_LABELS[language]['critical_issues'], style_h1))
-        
-        for issue in issues:
-            issue_type = issue.get("type", "Yellow")
-            account_name = sanitize_pdf_text(issue.get("account", "Account"))
-            details = sanitize_pdf_text(issue.get("details", ""))
-            action = sanitize_pdf_text(issue.get("action", ""))
-            
-            # Determine color-coding
-            if issue_type.upper() == "RED":
-                bar_color = color_red
-                badge_text = f"<font color='{color_red.hexval()}'><b>{PDF_LABELS[language]['critical_badge']}</b></font>"
-            else:
-                bar_color = color_yellow
-                badge_text = f"<font color='{color_yellow.hexval()}'><b>{PDF_LABELS[language]['attention_badge']}</b></font>"
-                
-            issue_title_p = Paragraph(f"<b>{account_name}</b>: {badge_text}", style_body_bold)
-            issue_details_p = Paragraph(f"<b>{PDF_LABELS[language]['what_broken']}:</b> {details}", style_body)
-            issue_action_p = Paragraph(f"<b>{PDF_LABELS[language]['how_resolve']}:</b> {action}", style_body)
-            
-            # A 2-column table: thin left border bar, and content block
-            content_cell = [
-                issue_title_p,
-                Spacer(1, 4),
-                issue_details_p,
-                Spacer(1, 4),
-                issue_action_p
-            ]
-            
-            issue_table_data = [
-                ["", content_cell]
-            ]
-            
-            issue_table = Table(issue_table_data, colWidths=[4, printable_width - 6])
-            issue_table.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (0,0), bar_color),
-                ('BACKGROUND', (1,0), (1,0), background_light),
-                ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                ('TOPPADDING', (0,0), (-1,-1), 8),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-                ('LEFTPADDING', (1,0), (1,0), 12),
-                ('RIGHTPADDING', (1,0), (1,0), 12),
-                ('BOX', (0,0), (-1,-1), 0.5, border_color),
-            ]))
-            story.append(issue_table)
+    story.append(Spacer(1, 4))
+    story.append(HRFlowable(width="100%", thickness=1, color=border_color, spaceAfter=20))
+
+    # ── PARSE AND RENDER LETTER ──────────────────────────────────────────
+    # The letter comes from the LLM as structured text. We parse sections
+    # and render them with appropriate formatting.
+
+    lines = letter_text.split('\n')
+    in_dispute_letters = False
+    current_section = None
+    dispute_letter_buffer = []
+
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+
+        # Skip empty lines
+        if not line:
+            story.append(Spacer(1, 4))
+            i += 1
+            continue
+
+        # Section headers
+        if line.startswith("GREETING:"):
+            greeting = line.split("GREETING:", 1)[1].strip()
+            story.append(Paragraph(greeting, style_heading))
             story.append(Spacer(1, 8))
-            
-        story.append(Spacer(1, 10))
-    else:
-        # Green profile text
-        story.append(Paragraph(PDF_LABELS[language]['no_issues'], style_h1))
-        no_issue_p = Paragraph(PDF_LABELS[language]['no_issues_desc'], style_body)
-        story.append(no_issue_p)
-        story.append(Spacer(1, 15))
- 
-    # --- STEP-BY-STEP REPAIR CHECKLIST ("HOW TO FIX IT") ---
-    action_steps = data.get("action_steps", [])
-    if action_steps:
-        checklist_elements = []
-        checklist_elements.append(Paragraph(PDF_LABELS[language]['checklist_title'], style_h1))
-        
-        for step in action_steps:
-            bullet_p = Paragraph(f"&bull;&nbsp;&nbsp; {step}", style_bullet)
-            checklist_elements.append(bullet_p)
-            
-        story.append(KeepTogether(checklist_elements))
-        story.append(Spacer(1, 15))
-        
-    # --- TIMELINE & EXPECTED RECOVERY ("HOW LONG IT TAKES") ---
-    timeline = data.get("timeline", [])
-    if timeline:
-        timeline_elements = []
-        timeline_elements.append(Paragraph(PDF_LABELS[language]['timeline_title'], style_h1))
-        
-        # Build table header
-        table_content = [[
-            Paragraph(f"<b>{PDF_LABELS[language]['col_timeline']}</b>", style_body_bold),
-            Paragraph(f"<b>{PDF_LABELS[language]['col_task']}</b>", style_body_bold),
-            Paragraph(f"<b>{PDF_LABELS[language]['col_priority']}</b>", style_body_bold)
-        ]]
-        
-        for item in timeline:
-            phase = item.get("phase", "Phase")
-            task = item.get("task", "")
-            status = item.get("status", "")
-            
-            # Highlight status text
-            if status.upper() in ["CRITICAL", "HIGH"]:
-                status_formatted = f"<font color='{color_red.hexval()}'><b>{status}</b></font>"
-            elif status.upper() in ["IN PROGRESS", "MEDIUM"]:
-                status_formatted = f"<font color='{color_yellow.hexval()}'><b>{status}</b></font>"
-            else:
-                status_formatted = f"<font color='{color_green.hexval()}'><b>{status}</b></font>"
-                
-            table_content.append([
-                Paragraph(phase, style_body_bold),
-                Paragraph(task, style_body),
-                Paragraph(status_formatted, style_body)
-            ])
-            
-        timeline_table = Table(table_content, colWidths=[printable_width * 0.2, printable_width * 0.6, printable_width * 0.2])
-        timeline_table.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), background_light),
-            ('BOTTOMPADDING', (0,0), (-1,0), 6),
-            ('TOPPADDING', (0,0), (-1,0), 6),
-            ('GRID', (0,0), (-1,-1), 0.5, border_color),
-            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, background_light]),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('TOPPADDING', (0,1), (-1,-1), 8),
-            ('BOTTOMPADDING', (0,1), (-1,-1), 8),
-            ('LEFTPADDING', (0,0), (-1,-1), 8),
-            ('RIGHTPADDING', (0,0), (-1,-1), 8),
-        ]))
-        timeline_elements.append(timeline_table)
-        timeline_elements.append(Spacer(1, 10))
-        
-        # Disclaimer / Notes
-        disclaimer_text = PDF_LABELS[language]['disclaimer']
-        timeline_elements.append(Paragraph(disclaimer_text, style_body_muted))
-        
-        story.append(KeepTogether(timeline_elements))
-        
-    # Build the document
+            i += 1
+            continue
+
+        if line.startswith("INTRO:"):
+            intro = line.split("INTRO:", 1)[1].strip()
+            story.append(Paragraph(intro, style_body))
+            story.append(Spacer(1, 8))
+            i += 1
+            continue
+
+        if line.startswith("ISSUE #"):
+            # Issue title
+            story.append(Paragraph(line, style_issue_title))
+            i += 1
+            continue
+
+        if line.startswith("WHAT:"):
+            what = line.split("WHAT:", 1)[1].strip()
+            story.append(Paragraph(f"<b>Problem:</b> {sanitize_pdf_text(what)}", style_body))
+            i += 1
+            continue
+
+        if line.startswith("IMPACT:"):
+            impact = line.split("IMPACT:", 1)[1].strip()
+            story.append(Paragraph(f"<b>Score Impact:</b> {sanitize_pdf_text(impact)}", style_body))
+            i += 1
+            continue
+
+        if line.startswith("ACTION:"):
+            action = line.split("ACTION:", 1)[1].strip()
+            story.append(Paragraph(f"<b>What to do:</b>", style_bold))
+            # Action might be multi-line
+            action_lines = [action]
+            j = i + 1
+            while j < len(lines) and lines[j].strip() and not lines[j].strip().startswith(("TIMELINE:", "SUCCESS_CHANCE:", "ISSUE #", "SCORE_PROJECTION:", "CLOSING:", "DISPUTE_LETTERS:")):
+                action_lines.append(lines[j].strip())
+                j += 1
+            for al in action_lines:
+                story.append(Paragraph(f"• {sanitize_pdf_text(al)}", style_action))
+            i = j
+            continue
+
+        if line.startswith("TIMELINE:"):
+            timeline = line.split("TIMELINE:", 1)[1].strip()
+            story.append(Paragraph(f"<b>Timeline:</b> {sanitize_pdf_text(timeline)}", style_body))
+            i += 1
+            continue
+
+        if line.startswith("SUCCESS_CHANCE:"):
+            chance = line.split("SUCCESS_CHANCE:", 1)[1].strip()
+            story.append(Paragraph(f"<b>Success chance:</b> {sanitize_pdf_text(chance)}", style_body))
+            story.append(Spacer(1, 8))
+            i += 1
+            continue
+
+        if line.startswith("SCORE_PROJECTION:"):
+            story.append(Spacer(1, 12))
+            story.append(HRFlowable(width="100%", thickness=0.5, color=border_color, spaceAfter=12))
+            story.append(Paragraph("<b>Score Projection</b>", style_bold))
+
+            # Build projection table
+            proj_data = []
+            j = i + 1
+            while j < len(lines) and lines[j].strip():
+                pline = lines[j].strip()
+                if pline.startswith("Current:"):
+                    val = pline.split(":", 1)[1].strip()
+                    proj_data.append(["Current Score", val])
+                elif pline.startswith("After fixing"):
+                    val = pline.split(":", 1)[1].strip()
+                    proj_data.append(["After All Fixes", val])
+                elif pline.startswith("Timeline:"):
+                    val = pline.split(":", 1)[1].strip()
+                    proj_data.append(["Expected Timeline", val])
+                elif pline.startswith(("CLOSING:", "DISPUTE_LETTERS:")):
+                    break
+                j += 1
+
+            if proj_data:
+                proj_table = Table(proj_data, colWidths=[printable_width * 0.4, printable_width * 0.6])
+                proj_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (0, -1), bg_warm),
+                    ('BACKGROUND', (1, 0), (1, -1), bg_blue),
+                    ('FONTNAME', (0, 0), (-1, -1), reg_font),
+                    ('FONTNAME', (0, 0), (0, -1), bold_font),
+                    ('FONTSIZE', (0, 0), (-1, -1), 10),
+                    ('TEXTCOLOR', (0, 0), (-1, -1), text_dark),
+                    ('GRID', (0, 0), (-1, -1), 0.5, border_color),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('TOPPADDING', (0, 0), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 12),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+                ]))
+                story.append(proj_table)
+
+            i = j
+            continue
+
+        if line.startswith("CLOSING:"):
+            closing = line.split("CLOSING:", 1)[1].strip()
+            story.append(Spacer(1, 16))
+            story.append(Paragraph(sanitize_pdf_text(closing), style_closing))
+            i += 1
+            continue
+
+        if line.startswith("DISPUTE_LETTERS:"):
+            in_dispute_letters = True
+            story.append(Spacer(1, 20))
+            story.append(HRFlowable(width="100%", thickness=1, color=accent_warm, spaceAfter=12))
+            story.append(Paragraph("<b>📝 Ready-to-Send Dispute Letters</b>", style_issue_title))
+            story.append(Paragraph(
+                "Copy these letters and send them to the respective banks or CIBIL. "
+                "You can send them by email, post, or submit online through the bank's dispute portal.",
+                style_disclaimer
+            ))
+            story.append(Spacer(1, 8))
+            i += 1
+            continue
+
+        if in_dispute_letters:
+            # Collect dispute letter content
+            if line.startswith("---") or line.startswith("Letter #") or line.startswith("To:"):
+                dispute_letter_buffer.append(line)
+            elif line.startswith("Subject:") or line.startswith("Dear") or line.startswith("Respected"):
+                dispute_letter_buffer.append(line)
+            elif line:
+                dispute_letter_buffer.append(line)
+
+            # Render accumulated letter on separator
+            if line.startswith("---") and dispute_letter_buffer:
+                letter_content = "<br/>".join([sanitize_pdf_text(l) for l in dispute_letter_buffer if l.strip() and not l.strip().startswith("---")])
+                if letter_content.strip():
+                    story.append(Spacer(1, 12))
+                    # Letter box
+                    letter_para = Paragraph(letter_content, ParagraphStyle(
+                        'DisputeLetter',
+                        parent=styles['Normal'],
+                        fontName=reg_font,
+                        fontSize=9,
+                        leading=13,
+                        textColor=text_dark,
+                        leftIndent=16,
+                        rightIndent=16,
+                        spaceAfter=8,
+                    ))
+                    story.append(letter_para)
+                    story.append(HRFlowable(width="80%", thickness=0.5, color=border_color, spaceAfter=8, spaceBefore=4))
+                dispute_letter_buffer = []
+            i += 1
+            continue
+
+        # Default: render as body text
+        story.append(Paragraph(sanitize_pdf_text(line), style_body))
+        i += 1
+
+    # ── FOOTER ──────────────────────────────────────────────────────────
+    story.append(Spacer(1, 24))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=border_color, spaceAfter=8))
+    story.append(Paragraph(
+        "⚠️ Disclaimer: This analysis is generated from your credit report using AI. "
+        "It is for informational purposes only and does not constitute legal or financial advice. "
+        "Always verify with your bank or a qualified professional before taking action.",
+        style_disclaimer
+    ))
+    story.append(Paragraph(
+        f"Generated by CLYR • {datetime.now().strftime('%d %B %Y')}",
+        ParagraphStyle('Footer', parent=styles['Normal'], fontName=reg_font, fontSize=7, textColor=text_mid)
+    ))
+
     doc.build(story)

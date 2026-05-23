@@ -1,6 +1,7 @@
 import os
 import tempfile
 import logging
+from datetime import datetime
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
@@ -8,14 +9,11 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
-from typing import List
 
 from app.utils.parser import extract_pdf_text
 from app.services.llm_service import generate_credit_summary
-from app.utils.pdf_generator import create_report_pdf
+from app.utils.pdf_generator import create_letter_pdf
 from app.utils.logging_config import logger
-from app.utils.sanitization import sanitize_pdf_text, sanitize_filename
 from app.routes.user_routes import router as user_router
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
@@ -67,27 +65,6 @@ if sentry_dsn:
     )
     logger.info("Sentry error monitoring initialized")
 
-class IssueModel(BaseModel):
-    account: str
-    type: str
-    details: str
-    action: str
-    impact: str
-
-class TimelineModel(BaseModel):
-    phase: str
-    task: str
-    status: str
-
-class CreditReportData(BaseModel):
-    score: int
-    customer_name: str
-    general_health: str
-    issues: List[IssueModel]
-    action_steps: List[str]
-    timeline: List[TimelineModel]
-    language: str = "en"
-
 def remove_temp_file(path: str):
     """Background task to remove a temporary file after response transmission."""
     try:
@@ -107,11 +84,10 @@ def health_check():
     return {"status": "healthy"}
 
 @app.post("/api/upload")
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(file: UploadFile = File(...), lang: str = "en"):
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
-    # Write uploaded file content to a temporary location
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB limit
     tmp_path = None
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
@@ -121,7 +97,6 @@ async def upload_pdf(file: UploadFile = File(...)):
                 raise HTTPException(status_code=413, detail="File too large. Maximum size is 10 MB.")
             if len(content) < 100:
                 raise HTTPException(status_code=400, detail="File is empty or too small to be a valid PDF.")
-            # Check PDF magic bytes
             if not content[:4].startswith(PDF_MAGIC):
                 raise HTTPException(status_code=400, detail="File is not a valid PDF.")
             tmp.write(content)
@@ -132,11 +107,9 @@ async def upload_pdf(file: UploadFile = File(...)):
             raise HTTPException(status_code=500, detail=f"Failed to read file: {str(e)}")
 
     try:
-        # Extract text from the PDF
         raw_text = extract_pdf_text(tmp_path)
-
-        # Synthesize plain English report structure via rules / LLM
-        summary = generate_credit_summary(raw_text)
+        # Generate personalized letter in customer's language
+        summary = generate_credit_summary(raw_text, language=lang)
         return summary
 
     except ValueError as ve:
@@ -144,28 +117,36 @@ async def upload_pdf(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to parse credit report: {str(e)}")
     finally:
-        # Cleanup upload temp file
         if tmp_path:
             remove_temp_file(tmp_path)
 
 @app.post("/api/download")
-def download_report(data: CreditReportData, background_tasks: BackgroundTasks):
-    # Create temp file for PDF compilation
-    fd, tmp_path = tempfile.mkstemp(suffix=".pdf")
-    os.close(fd) # Close file descriptor immediately to avoid lock on Windows
+def download_letter(letter_data: dict, background_tasks: BackgroundTasks):
+    """
+    Generate and download the credit analysis letter as a PDF.
     
+    letter_data should contain:
+    - letter: The letter text
+    - language: Language code
+    - score: Credit score
+    - customer_name: Customer name
+    """
+    fd, tmp_path = tempfile.mkstemp(suffix=".pdf")
+    os.close(fd)
+
     try:
-        # Generate the report PDF
-        create_report_pdf(data.model_dump(), tmp_path, language=data.language)
-        
-        # Enqueue removal of temp file as background task
+        create_letter_pdf(letter_data, tmp_path)
+
+        customer_name = letter_data.get("customer_name", "Customer").replace(" ", "_")
+        date_str = datetime.now().strftime("%Y%m%d")
+
         background_tasks.add_task(remove_temp_file, tmp_path)
-        
+
         return FileResponse(
             path=tmp_path,
-            filename=f"CLYR_Roadmap_{data.customer_name.replace(' ', '_')}.pdf",
+            filename=f"CLYR_Letter_{customer_name}_{date_str}.pdf",
             media_type="application/pdf"
         )
     except Exception as e:
         remove_temp_file(tmp_path)
-        raise HTTPException(status_code=500, detail=f"Failed to generate report PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate letter PDF: {str(e)}")
