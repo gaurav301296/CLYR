@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { translations, LANGUAGES } from '../i18n/translations';
+import logger from '../lib/logger';
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8005/api";
 
@@ -52,8 +53,11 @@ export function useAppState() {
     setCheckedTasks(new Set());
     const formData = new FormData();
     formData.append("file", targetFile);
+    const startTime = Date.now();
     try {
+      logger.info('Uploading file', { name: targetFile.name, size: targetFile.size });
       const response = await fetch(`${API_BASE}/upload`, { method: "POST", body: formData });
+      logger.api('POST', '/upload', response.status, Date.now() - startTime);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || 'Failed to process the credit report PDF.');
@@ -61,8 +65,9 @@ export function useAppState() {
       const data = await response.json();
       setReportData(data);
       setCurrentView('dashboard');
+      logger.track('report_generated', { score: data.score, issues: data.issues?.length || 0 });
     } catch (err) {
-      console.error(err);
+      logger.error('File upload failed', { error: err.message, name: targetFile.name });
       setError(err.message || 'An unexpected error occurred while parsing the credit report.');
     } finally {
       setLoading(false);
@@ -73,12 +78,15 @@ export function useAppState() {
     if (!reportData) return;
     setDownloading(true);
     setError(null);
+    const startTime = Date.now();
     try {
+      logger.info('Downloading PDF', { customer: reportData.customer_name });
       const response = await fetch(`${API_BASE}/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...reportData, language: lang })
       });
+      logger.api('POST', '/download', response.status, Date.now() - startTime);
       if (!response.ok) throw new Error('Failed to compile and download PDF.');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -88,8 +96,9 @@ export function useAppState() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      logger.track('pdf_downloaded', { customer: reportData.customer_name });
     } catch (err) {
-      console.error(err);
+      logger.error('PDF download failed', { error: err.message });
       setError('Failed to download PDF. Please try again.');
     } finally {
       setDownloading(false);

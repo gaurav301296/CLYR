@@ -10,19 +10,14 @@ import secrets
 import time
 import logging
 from typing import Optional
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = os.environ.get("AUTH_DB_PATH", str(Path(__file__).parent.parent.parent / "auth.db"))
-
+# Use the shared DB path from db_service
 def get_db():
-    """Get SQLite connection."""
-    db = sqlite3.connect(DB_PATH)
-    db.row_factory = sqlite3.Row
-    db.execute("PRAGMA journal_mode=WAL")
-    db.execute("PRAGMA foreign_keys=ON")
-    return db
+    """Get SQLite connection from shared db_service."""
+    from app.services.db_service import get_db as _get_db
+    return _get_db()
 
 def init_db():
     """Initialize the auth database."""
@@ -41,8 +36,7 @@ def init_db():
             token TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
             expires_at REAL NOT NULL,
-            created_at REAL NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            created_at REAL NOT NULL
         );
 
         CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -191,5 +185,7 @@ def cleanup_expired_tokens():
     finally:
         db.close()
 
-# Initialize on import
+# Note: db_service.init_db() is called first (on import) and creates all tables
+# including users and refresh_tokens. This init_db is kept for backward compat
+# but is effectively a no-op since tables already exist.
 init_db()

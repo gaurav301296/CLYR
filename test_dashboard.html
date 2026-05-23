@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLYR — Live Test Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,sans-serif;background:#090d16;color:#f1f5f9;line-height:1.6;min-height:100vh}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+h1{color:#e85d04;font-size:28px;margin-bottom:8px}
+h2{color:#f1f5f9;font-size:20px;margin:24px 0 12px;border-bottom:1px solid #1e293b;padding-bottom:8px}
+h3{color:#94a3b8;font-size:16px;margin:16px 0 8px}
+.section{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px;margin:16px 0}
+.btn{display:inline-block;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;margin:4px}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-secondary{background:transparent;border:1px solid #1e293b;color:#94a3b8}
+.btn-primary:hover{background:#3b82f6}
+.btn-secondary:hover{border-color:#3b82f6;color:#3b82f6}
+input,select{padding:10px 14px;border-radius:8px;border:1px solid #1e293b;background:#090d16;color:#f1f5f9;font-size:14px;outline:none}
+input:focus,select:focus{border-color:#2563eb}
+label{display:block;font-size:12px;color:#64748b;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.form-group{margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px}
+.card h3{margin-top:0}
+.price{font-size:28px;font-weight:700;color:#2563eb}
+.price span{font-size:14px;color:#64748b;font-weight:400}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(16,185,129,0.1);color:#10b981}
+.badge-yellow{background:rgba(245,158,11,0.1);color:#f59e0b}
+.badge-red{background:rgba(239,68,68,0.1);color:#ef4444}
+textarea{width:100%;min-height:200px;padding:12px;border-radius:8px;border:1px solid #1e293b;background:#090d16;color:#f1f5f9;font-family:monospace;font-size:12px;resize:vertical}
+.status{padding:8px 16px;border-radius:8px;font-size:14px;margin:8px 0}
+.status-success{background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.3)}
+.status-error{background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3)}
+.status-loading{background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.3)}
+table{width:100%;border-collapse:collapse;margin:12px 0}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #1e293b;font-size:13px}
+th{color:#64748b;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.5px}
+.lang-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}
+.lang-btn{padding:8px;text-align:center;border-radius:6px;border:1px solid #1e293b;background:transparent;color:#94a3b8;cursor:pointer;font-size:13px}
+.lang-btn:hover,.lang-btn.active{border-color:#2563eb;color:#2563eb;background:rgba(37,99,235,0.1)}
+.preview-box{background:#090d16;border:1px solid #1e293b;border-radius:8px;padding:16px;max-height:400px;overflow-y:auto;white-space:pre-wrap;font-size:13px}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🔍 CLYR — Live Test Dashboard</h1>
+<p style="color:#64748b;margin-bottom:24px">End-to-end testing of all features. Backend: <code id="backend-status">checking...</code></p>
+
+<!-- SECTION 1: Health Check -->
+<div class="section">
+<h2>1. Backend Health</h2>
+<div id="health-result">Checking...</div>
+</div>
+
+<!-- SECTION 2: Upload & Generate Letter -->
+<div class="section">
+<h2>2. Upload CIBIL Report → Generate Letter</h2>
+<div class="grid">
+  <div>
+    <div class="form-group">
+      <label>Select PDF File</label>
+      <input type="file" id="pdf-file" accept=".pdf">
+    </div>
+    <div class="form-group">
+      <label>Output Language</label>
+      <select id="lang-select">
+        <option value="en">English</option>
+        <option value="hi">हिन्दी (Hindi)</option>
+        <option value="bn">বাংলা (Bengali)</option>
+        <option value="te">తెలుగు (Telugu)</option>
+        <option value="mr">मराठी (Marathi)</option>
+        <option value="ta">தமிழ் (Tamil)</option>
+        <option value="gu">ગુજરાતી (Gujarati)</option>
+        <option value="kn">ಕನ್ನಡ (Kannada)</option>
+        <option value="ml">മലയാളം (Malayalam)</option>
+        <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="uploadPDF()">📤 Upload & Generate Letter</button>
+    <div id="upload-status"></div>
+  </div>
+  <div>
+    <label>Generated Letter Preview</label>
+    <div class="preview-box" id="letter-preview">Upload a PDF to see the generated letter here...</div>
+  </div>
+</div>
+</div>
+
+<!-- SECTION 3: Download PDF -->
+<div class="section">
+<h2>3. Download Letter as PDF</h2>
+<button class="btn btn-primary" onclick="downloadPDF()" id="download-btn" disabled>📄 Download PDF</button>
+<div id="download-status"></div>
+</div>
+
+<!-- SECTION 4: All Languages Test -->
+<div class="section">
+<h2>4. Test All 10 Languages</h2>
+<p style="color:#64748b;margin-bottom:12px">Click each language to generate a letter:</p>
+<div class="lang-grid" id="lang-grid"></div>
+<div id="all-lang-results"></div>
+</div>
+
+<!-- SECTION 5: Auth Test -->
+<div class="section">
+<h2>5. Authentication Flow</h2>
+<div class="grid">
+  <div>
+    <h3>Sign Up</h3>
+    <div class="form-group"><label>Email</label><input type="email" id="signup-email" placeholder="test@example.com"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="signup-pass" placeholder="min 6 chars"></div>
+    <div class="form-group"><label>Full Name</label><input type="text" id="signup-name" placeholder="Test User"></div>
+    <button class="btn btn-primary" onclick="signUp()">Create Account</button>
+    <div id="signup-status"></div>
+  </div>
+  <div>
+    <h3>Log In</h3>
+    <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="test@example.com"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="login-pass" placeholder="password"></div>
+    <button class="btn btn-primary" onclick="logIn()">Log In</button>
+    <div id="login-status"></div>
+  </div>
+</div>
+<div id="auth-token" style="margin-top:12px;font-size:12px;color:#64748b"></div>
+</div>
+
+<!-- SECTION 6: API Endpoints Test -->
+<div class="section">
+<h2>6. API Endpoints</h2>
+<table>
+<tr><th>Endpoint</th><th>Method</th><th>Status</th><th>Action</th></tr>
+<tr><td>/api/health</td><td>GET</td><td id="ep-health">-</td><td><button class="btn btn-secondary" onclick="testEndpoint('health')">Test</button></td></tr>
+<tr><td>/api/upload</td><td>POST</td><td id="ep-upload">-</td><td><button class="btn btn-secondary" onclick="testEndpoint('upload')">Test</button></td></tr>
+<tr><td>/api/download</td><td>POST</td><td id="ep-download">-</td><td><button class="btn btn-secondary" onclick="testEndpoint('download')">Test</button></td></tr>
+<tr><td>/api/auth/signup</td><td>POST</td><td id="ep-signup">-</td><td><button class="btn btn-secondary" onclick="testEndpoint('signup')">Test</button></td></tr>
+<tr><td>/api/auth/login</td><td>POST</td><td id="ep-login">-</td><td><button class="btn btn-secondary" onclick="testEndpoint('login')">Test</button></td></tr>
+<tr><td>/api/user/me</td><td>GET</td><td id="ep-me">-</td><td><button class="btn btn-secondary" onclick="testEndpoint('me')">Test</button></td></tr>
+</table>
+</div>
+
+<!-- SECTION 7: Error Handling -->
+<div class="section">
+<h2>7. Error Handling</h2>
+<button class="btn btn-secondary" onclick="testError('no-file')">No File</button>
+<button class="btn btn-secondary" onclick="testError('bad-type')">Bad File Type</button>
+<button class="btn btn-secondary" onclick="testError('empty')">Empty File</button>
+<button class="btn btn-secondary" onclick="testError('corrupt')">Corrupt PDF</button>
+<div id="error-results"></div>
+</div>
+
+<!-- SECTION 8: Performance -->
+<div class="section">
+<h2>8. Performance Metrics</h2>
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Backend Response Time</td><td id="perf-health">-</td></tr>
+<tr><td>Upload + Letter Generation</td><td id="perf-upload">-</td></tr>
+<tr><td>PDF Download</td><td id="perf-download">-</td></tr>
+<tr><td>Letter Length (chars)</td><td id="perf-length">-</td></tr>
+<tr><td>PDF Size (bytes)</td><td id="perf-pdfsize">-</td></tr>
+</table>
+</div>
+</div>
+
+<script>
+const API = 'http://localhost:8005/api';
+let currentLetterData = null;
+let authToken = localStorage.getItem('access_token') || '';
+
+// Health check on load
+async function checkHealth() {
+  const t0 = Date.now();
+  try {
+    const r = await fetch(`${API}/health`);
+    const ms = Date.now() - t0;
+    document.getElementById('backend-status').textContent = `✅ Online (${ms}ms)`;
+    document.getElementById('health-result').innerHTML = `<div class="status status-success">✅ Backend healthy — ${ms}ms response time</div>`;
+    document.getElementById('perf-health').textContent = `${ms}ms`;
+  } catch(e) {
+    document.getElementById('backend-status').textContent = `❌ Offline`;
+    document.getElementById('health-result').innerHTML = `<div class="status status-error">❌ Backend offline: ${e.message}</div>`;
+  }
+}
+checkHealth();
+
+// Upload PDF
+async function uploadPDF() {
+  const file = document.getElementById('pdf-file').files[0];
+  if (!file) { alert('Please select a PDF file'); return; }
+  const lang = document.getElementById('lang-select').value;
+  const status = document.getElementById('upload-status');
+  const preview = document.getElementById('letter-preview');
+  
+  status.innerHTML = '<div class="status status-loading">⏳ Uploading and generating letter...</div>';
+  const t0 = Date.now();
+  
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const r = await fetch(`${API}/upload?lang=${lang}`, { method: 'POST', body: formData });
+    const ms = Date.now() - t0;
+    
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${r.status}`);
+    }
+    
+    const data = await r.json();
+    currentLetterData = data;
+    
+    preview.textContent = data.letter || 'No letter content';
+    status.innerHTML = `<div class="status status-success">✅ Letter generated in ${ms}ms | Score: ${data.score} | Name: ${data.customer_name} | Lang: ${data.language}</div>`;
+    document.getElementById('download-btn').disabled = false;
+    document.getElementById('perf-upload').textContent = `${ms}ms`;
+    document.getElementById('perf-length').textContent = (data.letter || '').length;
+  } catch(e) {
+    status.innerHTML = `<div class="status status-error">❌ Error: ${e.message}</div>`;
+  }
+}
+
+// Download PDF
+async function downloadPDF() {
+  if (!currentLetterData) { alert('Generate a letter first'); return; }
+  const status = document.getElementById('download-status');
+  status.innerHTML = '<div class="status status-loading">⏳ Generating PDF...</div>';
+  const t0 = Date.now();
+  
+  try {
+    const r = await fetch(`${API}/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentLetterData)
+    });
+    const ms = Date.now() - t0;
+    
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `CLYR_Letter_${currentLetterData.customer_name || 'report'}_${Date.now()}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    status.innerHTML = `<div class="status status-success">✅ PDF downloaded (${(blob.size/1024).toFixed(1)}KB) in ${ms}ms</div>`;
+    document.getElementById('perf-download').textContent = `${ms}ms`;
+    document.getElementById('perf-pdfsize').textContent = blob.size;
+  } catch(e) {
+    status.innerHTML = `<div class="status status-error">❌ Error: ${e.message}</div>`;
+  }
+}
+
+// Test all languages
+function initLangGrid() {
+  const langs = [
+    {code:'en', name:'English', native:'English'},
+    {code:'hi', name:'Hindi', native:'हिन्दी'},
+    {code:'bn', name:'Bengali', native:'বাংলা'},
+    {code:'te', name:'Telugu', native:'తెలుగు'},
+    {code:'mr', name:'Marathi', native:'मराठी'},
+    {code:'ta', name:'Tamil', native:'தமிழ்'},
+    {code:'gu', name:'Gujarati', native:'ગુજરાતી'},
+    {code:'kn', name:'Kannada', native:'ಕನ್ನಡ'},
+    {code:'ml', name:'Malayalam', native:'മലയാളം'},
+    {code:'pa', name:'Punjabi', native:'ਪੰਜਾਬੀ'},
+  ];
+  const grid = document.getElementById('lang-grid');
+  grid.innerHTML = langs.map(l => `<button class="lang-btn" onclick="testLang('${l.code}', '${l.name}')">${l.native}<br><small>${l.name}</small></button>`).join('');
+}
+initLangGrid();
+
+async function testLang(code, name) {
+  const file = document.getElementById('pdf-file').files[0];
+  if (!file) { alert('Select a PDF first'); return; }
+  const results = document.getElementById('all-lang-results');
+  results.innerHTML += `<div class="status status-loading">⏳ Generating ${name}...</div>`;
+  
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const t0 = Date.now();
+    const r = await fetch(`${API}/upload?lang=${code}`, { method: 'POST', body: formData });
+    const ms = Date.now() - t0;
+    const data = await r.json();
+    const letter = data.letter || '';
+    results.innerHTML += `<div class="status status-success">✅ ${name} (${code}): ${ms}ms | ${letter.length} chars | Score: ${data.score}</div>`;
+  } catch(e) {
+    results.innerHTML += `<div class="status status-error">❌ ${name}: ${e.message}</div>`;
+  }
+}
+
+// Auth
+async function signUp() {
+  const email = document.getElementById('signup-email').value;
+  const password = document.getElementById('signup-pass').value;
+  const name = document.getElementById('signup-name').value;
+  const status = document.getElementById('signup-status');
+  
+  try {
+    const r = await fetch(`${API}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, full_name: name })
+    });
+    const data = await r.json();
+    status.innerHTML = r.ok 
+      ? `<div class="status status-success">✅ Account created: ${data.user?.email || email}</div>`
+      : `<div class="status status-error">❌ ${data.detail || 'Error'}</div>`;
+  } catch(e) {
+    status.innerHTML = `<div class="status status-error">❌ ${e.message}</div>`;
+  }
+}
+
+async function logIn() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-pass').value;
+  const status = document.getElementById('login-status');
+  
+  try {
+    const r = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await r.json();
+    if (r.ok && data.access_token) {
+      authToken = data.access_token;
+      localStorage.setItem('access_token', authToken);
+      document.getElementById('auth-token').textContent = `Token: ${authToken.substring(0, 40)}...`;
+      status.innerHTML = `<div class="status status-success">✅ Logged in as ${data.user?.email || email}</div>`;
+    } else {
+      status.innerHTML = `<div class="status status-error">❌ ${data.detail || 'Login failed'}</div>`;
+    }
+  } catch(e) {
+    status.innerHTML = `<div class="status status-error">❌ ${e.message}</div>`;
+  }
+}
+
+// Test endpoints
+async function testEndpoint(name) {
+  const el = document.getElementById(`ep-${name}`);
+  el.textContent = '⏳';
+  try {
+    let r;
+    switch(name) {
+      case 'health': r = await fetch(`${API}/health`); break;
+      case 'upload': r = await fetch(`${API}/upload`); break;
+      case 'download': r = await fetch(`${API}/download`, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}); break;
+      case 'signup': r = await fetch(`${API}/auth/signup`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'test@test.com',password:'test123',full_name:'Test'})}); break;
+      case 'login': r = await fetch(`${API}/auth/login`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'test@test.com',password:'test123'})}); break;
+      case 'me': r = await fetch(`${API}/user/me`, {headers:{'Authorization':`Bearer ${authToken}`}}); break;
+    }
+    const data = await r.json().catch(() => ({}));
+    el.innerHTML = r.ok ? `<span class="badge badge-green">✅ ${r.status}</span>` : `<span class="badge badge-yellow">⚠️ ${r.status}</span>`;
+    el.title = JSON.stringify(data).substring(0, 200);
+  } catch(e) {
+    el.innerHTML = `<span class="badge badge-red">❌ ERR</span>`;
+  }
+}
+
+// Error tests
+async function testError(type) {
+  const results = document.getElementById('error-results');
+  let r;
+  try {
+    switch(type) {
+      case 'no-file': r = await fetch(`${API}/upload`); break;
+      case 'bad-type': r = await fetch(`${API}/upload`, {method:'POST',body:(()=>{const f=new FormData();f.append('file',new Blob(['not pdf'],{type:'text/plain'}),'test.txt');return f;})()}); break;
+      case 'empty': r = await fetch(`${API}/upload`, {method:'POST',body:(()=>{const f=new FormData();f.append('file',new Blob([],{type:'application/pdf'}),'empty.pdf');return f;})()}); break;
+      case 'corrupt': r = await fetch(`${API}/upload`, {method:'POST',body:(()=>{const f=new FormData();f.append('file',new Blob(['not a pdf'],{type:'application/pdf'}),'fake.pdf');return f;})()}); break;
+    }
+    const data = await r.json().catch(() => ({}));
+    results.innerHTML += `<div class="status ${r.status >= 400 ? 'status-success' : 'status-error'}">${type}: HTTP ${r.status} — ${data.detail || 'OK'}</div>`;
+  } catch(e) {
+    results.innerHTML += `<div class="status status-error">${type}: ${e.message}</div>`;
+  }
+}
+</script>
+</body>
+</html>

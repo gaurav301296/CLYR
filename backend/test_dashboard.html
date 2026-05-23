@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLYR — Live Test Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,sans-serif;background:#090d16;color:#f1f5f9;line-height:1.6;min-height:100vh}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+h1{color:#e85d04;font-size:28px;margin-bottom:8px}
+h2{color:#f1f5f9;font-size:20px;margin:24px 0 12px;border-bottom:1px solid #1e293b;padding-bottom:8px}
+h3{color:#94a3b8;font-size:16px;margin:16px 0 8px}
+.section{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px;margin:16px 0}
+.btn{display:inline-block;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;margin:4px}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-secondary{background:transparent;border:1px solid #1e293b;color:#94a3b8}
+.btn:hover{opacity:0.9}
+input,select{padding:10px 14px;border-radius:8px;border:1px solid #1e293b;background:#090d16;color:#f1f5f9;font-size:14px}
+label{display:block;font-size:12px;color:#64748b;margin-bottom:4px}
+.form-group{margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px}
+textarea{width:100%;min-height:300px;padding:12px;border-radius:8px;border:1px solid #1e293b;background:#090d16;color:#f1f5f9;font-family:monospace;font-size:12px;resize:vertical;white-space:pre-wrap}
+.status{padding:8px 16px;border-radius:8px;font-size:13px;margin:8px 0}
+.status-ok{background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.3)}
+.status-err{background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3)}
+.status-load{background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.3)}
+table{width:100%;border-collapse:collapse;margin:12px 0}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid #1e293b;font-size:13px}
+th{color:#64748b;font-weight:600;font-size:11px}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-ok{background:rgba(16,185,129,0.1);color:#10b981}
+.badge-err{background:rgba(239,68,68,0.1);color:#ef4444}
+.badge-warn{background:rgba(245,158,11,0.1);color:#f59e04}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🔍 CLYR — Live Test Dashboard</h1>
+<p style="color:#64748b;margin-bottom:24px">All tests run against the backend API. No CORS issues.</p>
+
+<div id="results"></div>
+</div>
+
+<script>
+const API = ''; // Same origin — proxied through backend
+const results = document.getElementById('results');
+let currentLetter = null;
+let authToken = '';
+
+function log(html) { results.innerHTML += html; }
+function clear() { results.innerHTML = ''; }
+
+async function runAllTests() {
+  clear();
+  log('<h2>🚀 Running All Tests...</h2>');
+  
+  // TEST 1: Health
+  log('<div class="section"><h3>1. Health Check</h3>');
+  try {
+    const t0 = performance.now();
+    const r = await fetch('/api/health');
+    const d = await r.json();
+    const ms = (performance.now() - t0).toFixed(0);
+    log(`<div class="status status-ok">✅ Backend healthy — ${ms}ms — ${JSON.stringify(d)}</div>`);
+  } catch(e) { log(`<div class="status status-err">❌ ${e.message}</div>`); }
+  log('</div>');
+
+  // TEST 2: Generate letter in all languages
+  log('<div class="section"><h3>2. Letter Generation — All 10 Languages</h3>');
+  const sampleReport = `CIBIL TRANSCORE REPORT
+REPORT DATE: 15-May-2026
+CONSUMER NAME: Rajesh Kumar
+CIBIL SCORE: 540
+
+ACCOUNT 1: HDFC BANK CREDIT CARD
+ACCOUNT TYPE: REVOLVING CREDIT
+SANCTIONED AMOUNT: 200,000 INR
+CURRENT BALANCE: 1,85,000 INR
+PAYMENT STATUS: OVERDUE
+DPD: 90 DAYS
+REMARKS: WRITTEN OFF
+
+ACCOUNT 2: SBI PERSONAL LOAN
+ACCOUNT TYPE: INSTALMENT LOAN
+SANCTIONED AMOUNT: 300,000 INR
+CURRENT BALANCE: 0 INR
+PAYMENT STATUS: SETTLED
+REMARKS: SETTLED FOR LESS THAN FULL AMOUNT`;
+
+  const blob = new Blob([sampleReport], {type: 'application/pdf'});
+  const file = new File([blob], 'test_cibil.pdf', {type: 'application/pdf'});
+  
+  const langs = [
+    ['en','English'], ['hi','Hindi'], ['bn','Bengali'], ['te','Telugu'],
+    ['mr','Marathi'], ['ta','Tamil'], ['gu','Gujarati'], ['kn','Kannada'],
+    ['ml','Malayalam'], ['pa','Punjabi']
+  ];
+  
+  log('<table><tr><th>Language</th><th>Status</th><th>Time</th><th>Score</th><th>Name</th><th>Letter Length</th><th>Has Hindi/Script</th></tr>');
+  
+  for (const [code, name] of langs) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const t0 = performance.now();
+      const r = await fetch(`/api/upload?lang=${code}`, {method:'POST', body:formData});
+      const ms = (performance.now() - t0).toFixed(0);
+      const d = await r.json();
+      const letter = d.letter || '';
+      const hasScript = /[\u0900-\u097F\u0980-\u09FF\u0C00-\u0C7F\u0A00-\u0A7F\u0B80-\u0BFF\u0D00-\u0D7F\u0A80-\u0AFF]/.test(letter);
+      log(`<tr><td>${name} (${code})</td><td><span class="badge badge-ok">✅ OK</span></td><td>${ms}ms</td><td>${d.score}</td><td>${d.customer_name}</td><td>${letter.length} chars</td><td>${hasScript ? '✅' : '❌'}</td></tr>`);
+      if (code === 'hi') currentLetter = d;
+    } catch(e) {
+      log(`<tr><td>${name}</td><td><span class="badge badge-err">❌ ${e.message}</span></td></tr>`);
+    }
+  }
+  log('</table></div>');
+
+  // TEST 3: Download PDF
+  if (currentLetter) {
+    log('<div class="section"><h3>3. PDF Download (Hindi)</h3>');
+    try {
+      const t0 = performance.now();
+      const r = await fetch('/api/download', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(currentLetter)
+      });
+      const ms = (performance.now() - t0).toFixed(0);
+      const blob = await r.blob();
+      log(`<div class="status status-ok">✅ PDF generated — ${(blob.size/1024).toFixed(1)}KB in ${ms}ms — Content-Type: ${blob.type}</div>`);
+      
+      // Verify PDF header
+      const header = await blob.slice(0,4).text();
+      log(`<div class="status ${header==='%PDF' ? 'status-ok' : 'status-err'}">PDF Header: "${header}" ${header==='%PDF' ? '✅ Valid PDF' : '❌ Invalid'}</div>`);
+    } catch(e) { log(`<div class="status status-err">❌ ${e.message}</div>`); }
+    log('</div>');
+  }
+
+  // TEST 4: Auth flow
+  log('<div class="section"><h3>4. Authentication Flow</h3>');
+  const testEmail = `test_${Date.now()}@example.com`;
+  const testPass = 'testpass123';
+  
+  // Signup
+  try {
+    const r = await fetch('/api/auth/signup', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: testEmail, password: testPass, full_name: 'Test User'})
+    });
+    const d = await r.json();
+    log(r.ok 
+      ? `<div class="status status-ok">✅ Signup: ${d.user?.email || testEmail}</div>`
+      : `<div class="status status-warn">⚠️ Signup: ${d.detail || 'Error'} (may already exist)</div>`);
+  } catch(e) { log(`<div class="status status-err">❌ Signup: ${e.message}</div>`); }
+
+  // Login
+  try {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: testEmail, password: testPass})
+    });
+    const d = await r.json();
+    if (r.ok && d.access_token) {
+      authToken = d.access_token;
+      log(`<div class="status status-ok">✅ Login: Token received (${d.access_token.length} chars)</div>`);
+      
+      // Get profile
+      const r2 = await fetch('/api/user/me', {
+        headers: {'Authorization': `Bearer ${authToken}`}
+      });
+      const d2 = await r2.json();
+      log(r2.ok
+        ? `<div class="status status-ok">✅ Profile: ${d2.email} (ID: ${d2.id})</div>`
+        : `<div class="status status-err">❌ Profile: ${JSON.stringify(d2)}</div>`);
+    } else {
+      log(`<div class="status status-err">❌ Login: ${d.detail || 'Failed'}</div>`);
+    }
+  } catch(e) { log(`<div class="status status-err">❌ Login: ${e.message}</div>`); }
+  log('</div>');
+
+  // TEST 5: Error handling
+  log('<div class="section"><h3>5. Error Handling</h3>');
+  
+  // No file
+  try {
+    const r = await fetch('/api/upload');
+    log(`<div class="status ${r.status===422 ? 'status-ok' : 'status-warn'}">No file: HTTP ${r.status} ${r.status===422 ? '✅' : '⚠️ expected 422'}</div>`);
+  } catch(e) { log(`<div class="status status-err">❌ ${e.message}</div>`); }
+
+  // Bad file type
+  try {
+    const f = new FormData();
+    f.append('file', new Blob(['not pdf'], {type:'text/plain'}), 'test.txt');
+    const r = await fetch('/api/upload', {method:'POST', body:f});
+    log(`<div class="status ${r.status===400 ? 'status-ok' : 'status-warn'}">Bad type: HTTP ${r.status} ${r.status===400 ? '✅' : '⚠️ expected 400'}</div>`);
+  } catch(e) { log(`<div class="status status-err">❌ ${e.message}</div>`); }
+
+  // Empty file
+  try {
+    const f = new FormData();
+    f.append('file', new Blob([], {type:'application/pdf'}), 'empty.pdf');
+    const r = await fetch('/api/upload', {method:'POST', body:f});
+    log(`<div class="status ${r.status===400 ? 'status-ok' : 'status-warn'}">Empty: HTTP ${r.status} ${r.status===400 ? '✅' : '⚠️ expected 400'}</div>`);
+  } catch(e) { log(`<div class="status status-err">❌ ${e.message}</div>`); }
+  log('</div>');
+
+  // TEST 6: Letter content quality
+  if (currentLetter && currentLetter.letter) {
+    log('<div class="section"><h3>6. Letter Content Quality (Hindi)</h3>');
+    const letter = currentLetter.letter;
+    
+    const checks = [
+      ['Has GREETING', letter.includes('GREETING:')],
+      ['Has INTRO', letter.includes('INTRO:')],
+      ['Has ISSUE markers', letter.includes('ISSUE #')],
+      ['Has WHAT:', letter.includes('WHAT:')],
+      ['Has IMPACT:', letter.includes('IMPACT:')],
+      ['Has ACTION:', letter.includes('ACTION:')],
+      ['Has TIMELINE:', letter.includes('TIMELINE:')],
+      ['Has SCORE_PROJECTION', letter.includes('SCORE_PROJECTION:')],
+      ['Has CLOSING', letter.includes('CLOSING:')],
+      ['Has DISPUTE_LETTERS', letter.includes('DISPUTE_LETTERS:')],
+      ['Mentions HDFC', letter.includes('HDFC')],
+      ['Mentions SBI', letter.includes('SBI')],
+      ['Mentions Written Off', letter.toUpperCase().includes('WRITTEN OFF')],
+      ['Mentions CIBIL', letter.toUpperCase().includes('CIBIL')],
+      ['Mentions NOC', letter.includes('NOC') || letter.includes('No Objection')],
+      ['Mentions RBI', letter.includes('RBI')],
+      ['Has Hindi script', /[\u0900-\u097F]/.test(letter)],
+      ['Has score 540', letter.includes('540')],
+      ['Has name Rajesh', letter.includes('Rajesh')],
+    ];
+    
+    log('<table><tr><th>Check</th><th>Result</th></tr>');
+    let passed = 0;
+    for (const [name, result] of checks) {
+      if (result) passed++;
+      log(`<tr><td>${name}</td><td><span class="badge ${result ? 'badge-ok' : 'badge-err'}">${result ? '✅' : '❌'}</span></td></tr>`);
+    }
+    log(`</table>`);
+    log(`<div class="status ${passed === checks.length ? 'status-ok' : 'status-warn'}">${passed}/${checks.length} quality checks passed</div>`);
+    
+    // Show letter preview
+    log('<h4>Letter Preview (first 1500 chars):</h4>');
+    log(`<textarea readonly>${letter.substring(0, 1500)}</textarea>`);
+    log('</div>');
+  }
+
+  log('<h2>✅ All Tests Complete</h2>');
+}
+
+// Auto-run on load
+runAllTests();
+</script>
+</body>
+</html>

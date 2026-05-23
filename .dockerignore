@@ -1,0 +1,25 @@
+# .dockerignore
+.git
+.github
+.gitignore
+.env
+.env.example
+*.md
+node_modules
+__pycache__
+.pytest_cache
+.venv
+venv
+*.pyc
+.pytest_cache
+tests/
+e2e_test.py
+e2e_live_test.py
+playwright_test.py
+playwright_test_results.json
+quick_live_test.py
+test_all_languages.py
+test_dashboard.html
+test_gemini.py
+create_sample_report.py
+docs/

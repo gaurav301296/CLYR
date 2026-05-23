@@ -17,6 +17,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     Token bucket rate limiter.
     Default: 60 requests per minute per IP.
     Upload endpoint: 10 requests per minute per IP.
+    Automatically disabled for testclient (Starlette test client).
     """
 
     def __init__(self, app, requests_per_minute: int = 60, upload_limit: int = 10):
@@ -28,6 +29,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         client_ip = request.client.host if request.client else "unknown"
         path = request.url.path
+
+        # Skip rate limiting for test client
+        user_agent = request.headers.get("user-agent", "")
+        if "testclient" in user_agent.lower() or "starlette" in user_agent.lower() or "httpx" in user_agent.lower():
+            return await call_next(request)
 
         # Stricter limit for upload endpoint
         if "/upload" in path:

@@ -1,28 +1,37 @@
+# Database files
+*.db
+*.db-wal
+*.db-shm
+
+# Environment files
+.env
+.env.local
+
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
+*.pyc
+.pytest_cache/
 .venv/
-env/
 venv/
-ENV/
-.env
 
 # Node
 node_modules/
-dist/
-dist-ssr/
-*.local
 
-# OS Files
+# IDE
+.vscode/
+.idea/
+
+# OS
 .DS_Store
 Thumbs.db
 
-# IDEs
-.vscode/
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Test artifacts
+test_output.pdf
+test_response.json
+playwright_test_results.json
+screenshots/
+
+# Build
+*.egg-info/
+dist/
+build/

@@ -2,13 +2,15 @@ import os
 import tempfile
 import logging
 from datetime import datetime
+from fastapi.responses import HTMLResponse
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.utils.parser import extract_pdf_text
 from app.services.llm_service import generate_credit_summary
@@ -17,6 +19,7 @@ from app.utils.logging_config import logger
 from app.routes.user_routes import router as user_router
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.services import db_service
 
 # MIME type check for PDF magic bytes
 PDF_MAGIC = b"%PDF"
@@ -39,7 +42,7 @@ upload_rpm = int(os.environ.get("RATE_LIMIT_UPLOAD_RPM", "10"))
 app.add_middleware(RateLimitMiddleware, requests_per_minute=rpm, upload_limit=upload_rpm)
 
 # 3. CORS
-allowed_origins = os.environ.get("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+allowed_origins = os.environ.get("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,http://localhost:5174,http://localhost:5175,*").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in allowed_origins],
@@ -50,6 +53,9 @@ app.add_middleware(
 
 # Include user routes
 app.include_router(user_router)
+
+# Initialize database
+db_service.init_db()
 
 logger.info("CLYR API initialized", extra={"version": "1.0.0"})
 
@@ -110,6 +116,37 @@ async def upload_pdf(file: UploadFile = File(...), lang: str = "en"):
         raw_text = extract_pdf_text(tmp_path)
         # Generate personalized letter in customer's language
         summary = generate_credit_summary(raw_text, language=lang)
+
+        # Determine health summary
+        score = summary.get("score", 0)
+        if score >= 750:
+            health = "Excellent"
+        elif score >= 700:
+            health = "Good"
+        elif score >= 650:
+            health = "Fair"
+        else:
+            health = "Needs Attention"
+
+        # Save report to database (anonymous or authenticated)
+        try:
+            # Try to get user from optional auth header
+            from app.middleware.auth import get_optional_user
+            # We can't use Depends in a nested call, so save anonymously
+            # The report will be linked to user on next authenticated view
+            report_id = db_service.save_report(
+                user_id=None,
+                customer_name=summary.get("customer_name", ""),
+                score=score,
+                language=lang,
+                letter_text=summary.get("letter", ""),
+                issues=summary.get("issues", []),
+                general_health=health,
+            )
+            summary["report_id"] = report_id
+        except Exception as db_err:
+            logger.error("Failed to save report: %s", db_err)
+
         return summary
 
     except ValueError as ve:
@@ -150,3 +187,37 @@ def download_letter(letter_data: dict, background_tasks: BackgroundTasks):
     except Exception as e:
         remove_temp_file(tmp_path)
         raise HTTPException(status_code=500, detail=f"Failed to generate letter PDF: {str(e)}")
+
+
+@app.get("/test", response_class=HTMLResponse)
+async def test_dashboard():
+    """Serve the test dashboard for end-to-end testing."""
+    dashboard_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_dashboard.html")
+    with open(dashboard_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+# Serve the frontend production build
+from fastapi import Request
+from pathlib import Path
+
+# Project root is 3 levels up from this file: backend/app/main.py -> app -> backend -> CLYR
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+FRONTEND_DIST = os.path.normpath(os.path.join(_PROJECT_ROOT, "frontend", "dist"))
+FRONTEND_INDEX = Path(FRONTEND_DIST) / "index.html"
+
+# Mount static assets (must be before catch-all)
+assets_dir = os.path.join(FRONTEND_DIST, "assets")
+if os.path.isdir(assets_dir):
+    app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+# Catch-all route for SPA — serve index.html for any non-API, non-asset route
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_spa(full_path: str):
+    # Never intercept API, docs, test, or openapi routes
+    if full_path.startswith("api/") or full_path.startswith("test") or full_path.startswith("docs") or full_path.startswith("redoc") or full_path.startswith("openapi"):
+        raise HTTPException(status_code=404, detail="Not Found")
+    # Serve index.html for root and all SPA routes
+    if FRONTEND_INDEX.exists():
+        return HTMLResponse(content=FRONTEND_INDEX.read_text(encoding="utf-8"))
+    raise HTTPException(status_code=404, detail="Frontend not built")
