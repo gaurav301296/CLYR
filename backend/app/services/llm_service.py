@@ -196,6 +196,21 @@ TONE_PROFILES = {
 
 # ─── Vernacular Action Steps ──────────────────────────────────────────────
 # Specific, step-by-step instructions for each issue type, in each language.
+# These are REAL tactics that work in India, compiled from:
+# - CIBIL's own dispute resolution process
+# - RBI Ombudsman complaint procedures
+# - Consumer court filing processes
+# - Community-verified success strategies from Indian credit forums
+#
+# KEY INSIGHTS:
+# 1. CIBIL dispute is FREE — file at cibil.com → Consumer Dispute
+# 2. Bank has 30 days to respond — if no response, entry is REMOVED
+# 3. RBI Ombudsman is FREE — file at rbi.org.in if bank doesn't cooperate
+# 4. Consumer court costs ₹100-200 — no lawyer needed for claims under ₹5L
+# 5. "Settled" status hurts score — always demand "Closed" status
+# 6. Hard enquiries fade after 6-12 months — don't apply for new credit
+# 7. Credit utilization below 30% gives biggest score boost
+# 8. NOC from bank is MANDATORY — never accept verbal promises
 
 ACTION_STEPS = {
     "written_off": {
@@ -472,6 +487,64 @@ ACTION_STEPS = {
             "ਭੁਗਤਾਨ ਤੋਂ ਬਾਅਦ, ਬੈਂਕ ਤੋਂ 'No Dues Certificate' ਮੰਗੋ",
             "ਇਹ ਸਰਟੀਫਿਕੇਟ CIBIL ਨੂੰ cibil.com → Consumer Dispute ਤੇ ਭੇਜੋ",
             "ਭੁਗਤਾਨ ਤੋਂ 30-45 ਦਿਨਾਂ ਵਿੱਚ ਤੁਹਾਡਾ ਸਕੋਰ ਸੁਧਰਨਾ ਸ਼ੁਰੂ ਹੋ ਜਾਵੇਗਾ",
+        ],
+    },
+    "hard_inquiries": {
+        "en": [
+            "STOP applying for new credit cards or loans immediately",
+            "Each hard inquiry drops your score by 5-10 points",
+            "Inquiries stay on report for 2 years but impact fades after 6-12 months",
+            "If you need a loan, use pre-approved offers (they don't create hard inquiries)",
+            "Check for unauthorized inquiries — if you didn't apply, dispute them immediately at cibil.com",
+            "Multiple inquiries in short time = banks think you're desperate for credit",
+            "Wait at least 6 months before applying for any new credit",
+        ],
+        "hi": [
+            "ਤੁਰੰਤ ਨਵੇਂ ਕ੍ਰੈਡਿਟ ਕਾਰਡ ਜਾਂ ਲੋਨ ਲਈ ਅਪਲਾਈ ਕਰਨਾ ਬੰਦ ਕਰੋ",
+            "ਹਰ ਹਾਰਡ inquiry ਤੁਹਾਡੇ ਸਕੋਰ ਨੂੰ 5-10 ਅੰਕ ਘਟਾਉਂਦੀ ਹੈ",
+            "Inquiries 2 ਸਾਲ ਤੱਕ ਰਿਪੋਰਟ 'ਤੇ ਰਹਿੰਦੀਆਂ ਹਨ ਪਰ 6-12 ਮਹੀਨਿਆਂ ਬਾਅਦ ਪ੍ਰਭਾਵ ਘਟ ਜਾਂਦਾ ਹੈ",
+            "ਜੇ ਤੁਹਾਨੂੰ ਲੋਨ ਦੀ ਲੋੜ ਹੈ, ਤਾਂ pre-approved offers ਵਰਤੋ (ਉਹ ਹਾਰਡ inquiry ਨਹੀਂ ਬਣਾਉਂਦੇ)",
+            "ਅਣਅਧਿਕਾਰਤ inquiries ਚੈੱਕ ਕਰੋ — ਜੇ ਤੁਸੀਂ ਅਪਲਾਈ ਨਹੀਂ ਕੀਤੀ, ਤਾਂ ਤੁਰੰਤ cibil.com 'ਤੇ dispute ਕਰੋ",
+            "ਛੋਟੇ ਸਮੇਂ ਵਿੱਚ ਕਈ inquiries = ਬੈਂਕ ਸੋਚਦੇ ਹਨ ਕਿ ਤੁਸੀਂ ਪੈਸਿਆਂ ਲਈ ਬੇਬਸ ਹੋ",
+            "ਕਿਸੇ ਵੀ ਨਵੇਂ ਕ੍ਰੈਡਿਟ ਲਈ ਅਪਲਾਈ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਘੱਟੋ-ਘੱਟ 6 ਮਹੀਨੇ ਉਡੀਕੋ",
+        ],
+        "ta": [
+            "உடனே புதிய கிரெடிட் கார்டு அல்லது கடன் விண்ணப்பிப்பதை நிறுத்துங்கள்",
+            "ஒவ்வொரு hard inquiry உங்கள் ஸ்கோரை 5-10 புள்ளிகள் குறைக்கும்",
+            "Inquiries 2 ஆண்டுகள் அறிக்கையில் இருந்தாலும் 6-12 மாதங்களுக்குப் பிறகு தாக்கம் குறைகிறது",
+            "கடன் தேவைப்பட்டால் pre-approved offers பயன்படுத்துங்கள் (அவை hard inquiry உருவாக்காது)",
+            "அங்கீகாரமற்ற inquiries சரிபார்க்கவும் — நீங்கள் விண்ணப்பிக்கவில்லை என்றால் உடனே cibil.com இல் dispute செய்யுங்கள்",
+            "குறுகிய காலத்தில் பல inquiries = வங்கிகள் நீங்கள் பணத்திற்கு நெருக்கடியில் இருப்பதாக நினைக்கின்றன",
+            "எந்தவொரு புதிய கிரெடிட்டிற்கும் விண்ணப்பிக்க முன் குறைந்தபட்சம் 6 மாதங்கள் காத்திருக்கவும்",
+        ],
+    },
+    "high_utilization": {
+        "en": [
+            "Your credit utilization is above 30% — this is hurting your score significantly",
+            "Pay down your credit card balance to below 30% of your credit limit",
+            "Example: If your limit is ₹1,00,000, keep balance below ₹30,000",
+            "Paying down utilization gives the FASTEST score improvement — often 20-40 points in 30 days",
+            "If you can't pay fully, pay as much as possible — every rupee helps",
+            "Consider asking for a credit limit increase (this lowers utilization % without paying)",
+            "After paying, wait 1-2 billing cycles for the update to reflect in your CIBIL report",
+        ],
+        "hi": [
+            "ਤੁਹਾਡਾ ਕ੍ਰੈਡਿਟ utilization 30% ਤੋਂ ਉੱਪਰ ਹੈ — ਇਸ ਨਾਲ ਤੁਹਾਡਾ ਸਕੋਰ ਬਹੁਤ ਨੁਕਸਾਨ ਹੋ ਰਿਹਾ ਹੈ",
+            "ਆਪਣਾ ਕ੍ਰੈਡਿਟ ਕਾਰਡ ਬਕਾਇਆ ਆਪਣੀ ਕ੍ਰੈਡਿਟ ਲਿਮਿਟ ਦੇ 30% ਤੋਂ ਹੇਠਾਂ ਭਰੋ",
+            "ਉਦਾਹਰਨ: ਜੇ ਤੁਹਾਡੀ ਲਿਮਿਟ ₹1,00,000 ਹੈ, ਤਾਂ ਬਕਾਇਆ ₹30,000 ਤੋਂ ਘੱਟ ਰੱਖੋ",
+            "Utilization ਘਟਾਉਣ ਨਾਲ ਸਭ ਤੋਂ ਤੇਜ਼ੀ ਨਾਲ ਸਕੋਰ ਸੁਧਰਦਾ ਹੈ — ਅਕਸਰ 30 ਦਿਨਾਂ ਵਿੱਚ 20-40 ਅੰਕ",
+            "ਜੇ ਤੁਸੀਂ ਪੂਰਾ ਭਰ ਨਹੀਂ ਸਕਦੇ, ਤਾਂ ਜਿੰਨਾ ਹੋ ਸਕੇ ਭਰੋ — ਹਰ ਰੁਪਇਆ ਮਦਦ ਕਰਦਾ ਹੈ",
+            "ਕ੍ਰੈਡਿਟ ਲਿਮਿਟ ਵਧਾਉਣ ਲਈ ਪੁੱਛੋ (ਇਸ ਨਾਲ utilization % ਘਟ ਜਾਂਦਾ ਹੈ ਭੁਗਤਾਨ ਕੀਤੇ ਬਿਨਾਂ)",
+            "ਭੁਗਤਾਨ ਤੋਂ ਬਾਅਦ, CIBIL ਰਿਪੋਰਟ ਵਿੱਚ ਅਪਡੇਟ ਦਿਖਣ ਲਈ 1-2 ਬਿਲਿੰਗ ਸਾਈਕਲ ਉਡੀਕੋ",
+        ],
+        "ta": [
+            "உங்கள் கிரெடிட் utilization 30% க்கும் மேல் உள்ளது — இது உங்கள் ஸ்கோரை கடுமையாக பாதிக்கிறது",
+            "உங்கள் கிரெடிட் கார்டு இருப்பை கிரெடிட் லிமிட்டின் 30% க்கும் கீழே செலுத்துங்கள்",
+            "உதாரணம்: உங்கள் லிமிட் ₹1,00,000 என்றால் இருப்பை ₹30,000 க்கும் குறைவாக வைக்கவும்",
+            "Utilization குறைப்பது வேகமான ஸ்கோர் மேம்பாட்டை அளிக்கும் — பெரும்பாலும் 30 நாட்களில் 20-40 புள்ளிகள்",
+            "முழுமையாக செலுத்த முடியாவிட்டால் முடிந்தவரை செலுத்துங்கள் — ஒவ்வொரு ரூபாயும் உதவுகிறது",
+            "கிரெடிட் லிமிட் அதிகரிப்பு கேளுங்கள் (இது செலுத்தாமல் utilization % குறைக்கிறது)",
+            "செலுத்திய பிறகு CIBIL அறிக்கையில் புதுப்பிப்பு தெரிய 1-2 பில்லிங் சுழற்சிகள் காத்திருக்கவும்",
         ],
     },
 }
