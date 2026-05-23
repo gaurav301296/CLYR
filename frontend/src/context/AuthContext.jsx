@@ -1,6 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { identifyUser, resetAnalytics } from '../lib/analytics';
-import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
 
@@ -32,40 +30,23 @@ export function AuthProvider({ children }) {
     apiFetch('/user/me')
       .then((profile) => {
         setUser(profile);
-        identifyUser(profile.id, { email: profile.email });
       })
       .catch(() => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        resetAnalytics();
       })
       .finally(() => setLoading(false));
   }, []);
 
   const signUp = useCallback(async (email, password, fullName = '') => {
-    // Use Supabase if available, otherwise use backend API
-    if (supabase) {
-      const data = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
-      return data;
-    }
-    return apiFetch('/auth/signup', {
+    const data = await apiFetch('/auth/signup', {
       method: 'POST',
       body: JSON.stringify({ email, password, full_name: fullName }),
     });
+    return data;
   }, []);
 
   const signIn = useCallback(async (email, password) => {
-    if (supabase) {
-      const data = await supabase.auth.signInWithPassword({ email, password });
-      if (data.session) {
-        localStorage.setItem('access_token', data.session.access_token);
-        localStorage.setItem('refresh_token', data.session.refresh_token);
-      }
-      const profile = { id: data.user?.id, email: data.user?.email };
-      setUser(profile);
-      identifyUser(profile.id, { email: profile.email });
-      return data;
-    }
     const data = await apiFetch('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
@@ -76,19 +57,16 @@ export function AuthProvider({ children }) {
     }
     const profile = { id: data.user?.id, email: data.user?.email };
     setUser(profile);
-    identifyUser(profile.id, { email: profile.email });
     return data;
   }, []);
 
   const signOut = useCallback(async () => {
     try {
-      if (supabase) await supabase.auth.signOut();
-      else await apiFetch('/auth/logout', { method: 'POST' });
+      await apiFetch('/auth/logout', { method: 'POST' });
     } catch { /* ignore */ }
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     setUser(null);
-    resetAnalytics();
   }, []);
 
   const refreshUser = useCallback(async () => {

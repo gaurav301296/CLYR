@@ -40,7 +40,7 @@ export default function PaymentPage({ t, selectedPlan, planKey, setCurrentView }
   const features = PLAN_FEATURES[planName] || PLAN_FEATURES['Starter'];
 
   const getAuthToken = useCallback(() => {
-    return localStorage.getItem('supabase.auth.token') || sessionStorage.getItem('access_token') || '';
+    return localStorage.getItem('access_token') || '';
   }, []);
 
   const handlePayNow = useCallback(async () => {

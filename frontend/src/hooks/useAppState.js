@@ -113,10 +113,11 @@ export function useAppState() {
     });
   }, []);
 
-  const selectPlan = useCallback((plan) => {
+  // NOT using useCallback — this ensures the function always has access to current state setters
+  const selectPlan = (plan) => {
     setSelectedPlan(plan);
     setCurrentView('payment');
-  }, []);
+  };
 
   const getUtilPoints = useCallback((val) => {
     if (val < 10) return 35;
