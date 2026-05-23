@@ -889,32 +889,60 @@ def _regex_fallback_parse(raw_text: str, language: str = "en") -> dict:
                 "amount": amount_val,
             })
 
-    # Build a simple letter from regex data
+    # Build letter in the same structured format as LLM output
     tone = TONE_PROFILES.get(language, TONE_PROFILES["en"])
     health_summary = _get_health_summary(score, language)
 
     letter_parts = []
-    letter_parts.append(tone["greeting"].format(name=customer_name))
+    letter_parts.append(f"GREETING: {tone['greeting'].format(name=customer_name)}")
     letter_parts.append("")
-    letter_parts.append(tone["intro"].format(score=score, health_summary=health_summary))
+    letter_parts.append(f"INTRO: {tone['intro'].format(score=score, health_summary=health_summary)}")
     letter_parts.append("")
 
     if issues:
         letter_parts.append(tone["issue_intro"])
         letter_parts.append("")
         for i, issue in enumerate(issues, 1):
-            letter_parts.append(f"{tone['issue_label'].format(n=i)}: {issue['account']}")
-            letter_parts.append(f"  {issue['details']}")
+            letter_parts.append(f"ISSUE #{i}: {issue['account']}")
+            letter_parts.append(f"WHAT: {issue['details']}")
             if issue['amount'] > 0:
-                letter_parts.append(f"  Amount: {_format_amount(issue['amount'], language)}")
-            letter_parts.append(f"  {tone['score_impact'].format(impact='30-50' if issue['type'] == 'Red' else '15-25')}")
-            letter_parts.append(f"  {tone['what_to_do']}: {issue['action']}")
+                letter_parts.append(f"IMPACT: {tone['score_impact'].format(impact='30-50' if issue['type'] == 'Red' else '15-25')}")
+            else:
+                letter_parts.append(f"IMPACT: {tone['score_impact'].format(impact='30-50' if issue['type'] == 'Red' else '15-25')}")
+            
+            # Add full action steps
+            if "SETTLED" in issue.get("details", "").upper():
+                action_key = "settled"
+            elif "OVERDUE" in issue.get("details", "").upper():
+                action_key = "overdue"
+            else:
+                action_key = "written_off"
+            
+            action_steps = ACTION_STEPS.get(action_key, {}).get(language, ACTION_STEPS[action_key]["en"])
+            action_text = " → ".join(action_steps[:4])
+            letter_parts.append(f"ACTION: {action_text}")
+            letter_parts.append(f"TIMELINE: 30-45 days")
+            letter_parts.append(f"SUCCESS_CHANCE: {'High' if issue['type'] == 'Red' else 'Medium'}")
             letter_parts.append("")
     else:
         letter_parts.append("Good news — no major issues found in your report!")
         letter_parts.append("")
 
-    letter_parts.append(tone["closing"])
+    # Score projection
+    projected_score = min(900, score + (40 if any(i["type"] == "Red" for i in issues) else 20))
+    letter_parts.append("SCORE_PROJECTION:")
+    letter_parts.append(f"Current: {score}")
+    letter_parts.append(f"After fixing all issues: {projected_score}-{projected_score + 20}")
+    letter_parts.append(f"Timeline: 90 days")
+    letter_parts.append("")
+
+    letter_parts.append(f"CLOSING: {tone['closing']}")
+    letter_parts.append("")
+    letter_parts.append("DISPUTE_LETTERS:")
+    letter_parts.append("See action steps above for dispute process. Key steps:")
+    letter_parts.append("1. File dispute at cibil.com → Consumer Dispute (FREE)")
+    letter_parts.append("2. If bank doesn't respond in 30 days, entry is REMOVED")
+    letter_parts.append("3. Escalate to RBI Ombudsman at rbi.org.in if needed (FREE)")
     letter_parts.append("")
     letter_parts.append(tone["signoff"])
 
