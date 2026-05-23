@@ -194,6 +194,289 @@ TONE_PROFILES = {
 }
 
 
+# ─── Vernacular Action Steps ──────────────────────────────────────────────
+# Specific, step-by-step instructions for each issue type, in each language.
+
+ACTION_STEPS = {
+    "written_off": {
+        "en": [
+            "Call your bank's customer care or visit the nearest branch",
+            "Ask for the settlement amount for your written-off account",
+            "Negotiate — banks often accept 40-60% of the outstanding amount",
+            "Get the settlement agreement in writing BEFORE making payment",
+            "Pay the agreed amount and collect the receipt",
+            "Request a No Objection Certificate (NOC) within 7 days",
+            "Submit the NOC to CIBIL at cibil.com → Consumer Dispute",
+            "Follow up after 30 days — the status should change to 'Settled'",
+        ],
+        "hi": [
+            "अपने बैंक के customer care को कॉल करें या nearest branch में जाएं",
+            "अपने written-off अकाउंट का settlement amount पूछें",
+            "बातचीत करें — बैंक अक्सर बकाया राशि का 40-60% लेते हैं",
+            "भुगतान करने से पहले settlement agreement लिखित में लें",
+            "तय की गई राशि का भुगतान करें और रसीद लें",
+            "7 दिन के भीतर No Objection Certificate (NOC) मांगें",
+            "NOC को CIBIL को cibil.com → Consumer Dispute पर भेजें",
+            "30 दिन बाद फॉलो अप करें — स्टेटस 'Settled' में बदलना चाहिए",
+        ],
+        "bn": [
+            "আপনার ব্যাংকের customer care-কে কল করুন বা নিকটতম শাখায় যান",
+            "আপনার written-off অ্যাকাউন্টের settlement amount জিজ্ঞাসা করুন",
+            "আলোচনা করুন — ব্যাংক প্রায়শই বকেয়ার 40-60% গ্রহণ করে",
+            "পেমেন্ট করার আগে settlement agreement লিখিতভাবে নিন",
+            "সম্মত হওয়া পরিমাণ পরিশোধ করুন এবং রসিদ নিন",
+            "7 দিনের মধ্যে No Objection Certificate (NOC) চান",
+            "NOC কে CIBIL কে cibil.com → Consumer Dispute এ জমা দিন",
+            "30 দিন পর ফলো আপ করুন — স্ট্যাটাস 'Settled' এ পরিবর্তন হওয়া উচিত",
+        ],
+        "te": [
+            "మీ బ్యాంకు customer care కి కాల్ చేయండి లేదా సమీప బ్రాంచ్ కి వెళ్ళండి",
+            "మీ written-off అకౌంట్ కోసం settlement amount అడగండి",
+            "చర్చించండి — బ్యాంకులు తరచుగా బకాయిలో 40-60% తీసుకుంటాయి",
+            "చెల్లించే ముందు settlement agreement లిఖితంగా తీసుకోండి",
+            "అంగీకరించిన మొత్తం చెల్లించి రసీదు తీసుకోండి",
+            "7 రోజులలో No Objection Certificate (NOC) కోరండి",
+            "NOC ని CIBIL కి cibil.com → Consumer Dispute వద్ద సమర్పించండి",
+            "30 రోజుల తర్వాత ఫాలో అప్ చేయండి — స్థితి 'Settled' గా మారాలి",
+        ],
+        "mr": [
+            "तुमच्या बँकेच्या customer care ला कॉल करा किंवा जवच्या शेडकडे जा",
+            "तुमच्या written-off खात्याची settlement रक्कम विचारा",
+            "वाटाघाटी करा — बँका बहुधा बक्याच्या 40-60 स्वीकारतात",
+            "पेमेंट करण्यापूर्वी settlement agreement लिखित घ्या",
+            "ठरलेली रक्म भरा आणि पावती घ्या",
+            "7 दिवसांत No Objection Certificate (NOC) मागा",
+            "NOC CIBIL ला cibil.com → Consumer Dispute वर पाठवा",
+            "30 दिवसांनी फॉलो अप करा — स्थिती 'Settled' मध्ये बदलावी",
+        ],
+        "ta": [
+            "உங்கள் வங்கியின் customer care க்கு அழைக்கவும் அல்லது அருகிலுள்ள கிளைக்கு செல்லவும்",
+            "உங்கள் written-off கணக்கின் settlement தொகையைக் கேளுங்கள்",
+            "பேச்சுவார்த்தை செய்யுங்கள் — வங்கிகள் பெரும்பாலும் பாகியத்தின் 40-60% ஏற்றுக்கொள்கின்றன",
+            "பணம் செலுத்துவதற்கு முன் settlement agreement எழுத்துப்பூர்வமாக பெறுங்கள்",
+            "ஒப்புக்கொண்ட தொகையை செலுத்தி ரசீது பெறுங்கள்",
+            "7 நாட்களுக்குள் No Objection Certificate (NOC) கோருங்கள்",
+            "NOC ஐ CIBIL க்கு cibil.com → Consumer Dispute இல் சமர்ப்பிக்கவும்",
+            "30 நாட்களுக்குப் பிறகு பின்தொடரவும் — நிலை 'Settled' ஆக மாற வேண்டும்",
+        ],
+        "gu": [
+            "તમારી બેંકના customer care ને કોલ કરો અથવા નજીકની શાખાએ જાઓ",
+            "તમારા written-off એકાઉન્ટ ની settlement રકમ પૂછો",
+            "વાતચીત કરો — બેંકો ઘણીવાર બકાયાના 40-60% લે છે",
+            "ચૂકવણી કરતા પહેલા settlement agreement લેખિતમાં લો",
+            "સંમત થયેલી રકમ ચૂકવો અને રસીદ લો",
+            "7 દિવસમાં No Objection Certificate (NOC) માંગો",
+            "NOC ને CIBIL ને cibil.com → Consumer Dispute પર મોકલો",
+            "30 દિવસ પછી ફોલો અપ કરો — સ્થિતિ 'Settled' માં બદલાવું જોઈએ",
+        ],
+        "kn": [
+            "ನಿಮ್ಮ ಬ್ಯಾಂಕಿನ customer care ಗೆ ಕರೆ ಮಾಡಿ ಅಥವಾ ಹತ್ತಿರದ ಶಾಖೆಗೆ ಹೋಗಿ",
+            "ನಿಮ್ಮ written-off ಖಾತೆಯ settlement ಮೊತ್ತವನ್ನು ಕೇಳಿ",
+            "ಮಾತನಾಡಿ — ಬ್ಯಾಂಕುಗಳು ಸಾಮಾನ್ಯವಾಗಿ ಬಾಕಿಯ 40-60% ಪಡೆಯುತ್ತವೆ",
+            "ಪಾವತಿ ಮಾಡುವ ಮೊದಲು settlement agreement ಬರಹದ ಮೂಲಕ ಪಡೆಯಿರಿ",
+            "ಒಪ್ಪಂದದ ಮೊತ್ತವನ್ನು ಪಾವತಿಸಿ ರಶೀದಿ ಪಡೆಯಿರಿ",
+            "7 ದಿನಗಳಲ್ಲಿ No Objection Certificate (NOC) ಕೇಳಿ",
+            "NOC ಅನ್ನು CIBIL ಗೆ cibil.com → Consumer Dispute ನಲ್ಲಿ ಸಲ್ಲಿಸಿ",
+            "30 ದಿನಗಳ ನಂತರ ಫಾಲೋ ಅಪ್ ಮಾಡಿ — ಸ್ಥಿತಿ 'Settled' ಆಗಿ ಬದಲಾಗಬೇಕು",
+        ],
+        "ml": [
+            "നിങ്ങളുടെ ബാങ്കിന്റെ customer care നേയ് വിളിക്കുക അല്ലെങ്കിൽ അടുത്ത ബ്രാഞ്ചിൽ പോകുക",
+            "നിങ്ങളുടെ written-off അക്കൗണ്ടിന്റെ settlement തുക ചോദിക്കുക",
+            "ചർച്ച ചെയ്യുക — ബാങ്കുകൾ സാധാരണയായി ബാക്കിയുടെ 40-60% സ്വീകരിക്കുന്നു",
+            "പേയ്മെന്റ് ചെയ്യുന്നതിന് മുമ്പ് settlement agreement എഴുത്തിൽ എടുക്കുക",
+            "യോജിച്ച തുക അടയ്ക്കുകയും രസീദ് എടുക്കുകയും ചെയ്യുക",
+            "7 ദിവസത്തിനുള്ളിൽ No Objection Certificate (NOC) ആവശ്യപ്പെടുക",
+            "NOC നെ CIBIL ന് cibil.com → Consumer Dispute ൽ സമർപ്പിക്കുക",
+            "30 ദിവസത്തിന് ശേഷം ഫോളോ അപ്പ് ചെയ്യുക — നില 'Settled' ആയി മാറണം",
+        ],
+        "pa": [
+            "ਆਪਣੇ ਬੈਂਕ ਦੇ customer care ਨੂੰ ਕਾਲ ਕਰੋ ਜਾਂ ਨੇੜਲੀ ਸ਼ਾਖਾ ਵਿੱਚ ਜਾਓ",
+            "ਆਪਣੇ written-off ਅਕਾਊਂਟ ਦੀ settlement ਰਕਮ ਪੁੱਛੋ",
+            "ਗੱਲਬਾਤ ਕਰੋ — ਬੈਂਕ ਅਕਸਰ ਬਕਾਇਆ ਦੇ 40-60% ਲੈਂਦੀਆਂ ਹਨ",
+            "ਭੁਗਤਾਨ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ settlement agreement ਲਿਖਤੀ ਲਵੋ",
+            "ਤੈ ਹੋਈ ਰਕਮ ਦਾ ਭੁਗਤਾਨ ਕਰੋ ਅਤੇ ਰਸੀਦ ਲਵੋ",
+            "7 ਦਿਨਾਂ ਵਿੱਚ No Objection Certificate (NOC) ਮੰਗੋ",
+            "NOC ਨੂੰ CIBIL ਨੂੰ cibil.com → Consumer Dispute ਤੇ ਭੇਜੋ",
+            "30 ਦਿਨ ਬਾਅਦ ਫਾਲੋ ਅਪ ਕਰੋ — ਸਥਿਤੀ 'Settled' ਵਿੱਚ ਬਦਲਣੀ ਚਾਹੀਦੀ ਹੈ",
+        ],
+    },
+    "settled": {
+        "en": [
+            "Collect your settlement letter from the bank (if you don't have it)",
+            "Check if the letter says 'Settled' or 'Closed' — 'Settled' hurts your score",
+            "Write to the bank asking them to update the status to 'Closed' instead",
+            "If the bank refuses, file a dispute on cibil.com → Consumer Dispute",
+            "Mention: 'Account fully settled, request status update to Closed'",
+            "CIBIL will contact the bank — bank has 30 days to respond",
+            "If no response, CIBIL will update based on your evidence",
+        ],
+        "hi": [
+            "ਬੈਂਕ ਤੋਂ ਆਪਣੀ settlement letter ਲਵੋ (ਜੇ ਤੁਹਾਡੇ ਕੋਲ ਨਹੀਂ ਹੈ)",
+            "ਚੈੱਕ ਕਰੋ ਕਿ ਲੇਖ 'Settled' ਜਾਂ 'Closed' ਕਹਿੰਦਾ ਹੈ — 'Settled' ਸਕੋਰ ਨੂੰ ਨੁਕਸਾਨ ਪਹੁੰਚਾਉਂਦਾ ਹੈ",
+            "ਬੈਂਕ ਨੂੰ ਲਿਖੋ ਕਿ ਸਟੇਟਸ 'Closed' ਵਿੱਚ ਬਦਲਣ ਦੀ ਬੇਨਤੀ ਕਰੋ",
+            "ਜੇ ਬੈਂਕ ਇਨਕਾਰ ਕਰੇ, ਤਾਂ cibil.com → Consumer Dispute 'ਤੇ dispute ਦਰਜ ਕਰੋ",
+            "ਜ਼ਿਕਰ ਕਰੋ: 'Account fully settled, request status update to Closed'",
+            "CIBIL ਬੈਂਕ ਨਾਲ ਸੰਪਰਕ ਕਰੇਗਾ — ਬੈਂਕ ਕੋਲ 30 ਦਿਨ ਹਨ ਜਵਾਬ ਦੇਣ ਲਈ",
+            "ਜੇ ਜਵਾਬ ਨਹੀਂ ਮਿਲਦਾ, CIBIL ਤੁਹਾਡੇ ਸਬੂਤਾਂ ਅਨੁਸਾਰ ਅਪਡੇਟ ਕਰੇਗਾ",
+        ],
+        "bn": [
+            "ব্যাংক থেকে আপনার settlement letter সংগ্রহ করুন (যদি না থাকে)",
+            "চেক করুন লেখায় 'Settled' না 'Closed' লেখা আছে — 'Settled' স্কোর ক্ষতি করে",
+            "ব্যাংককে লিখুন স্ট্যাটাস 'Closed' তে আপডেট করার অনুরোধ করুন",
+            "ব্যাংক যদি অস্বীকার করে, cibil.com → Consumer Dispute এ dispute দাখিল করুন",
+            "উল্লেখ করুন: 'Account fully settled, request status update to Closed'",
+            "CIBIL ব্যাংকের সাথে যোগাযোগ করবে — ব্যাংকের কাছে 30 দিন আছে উত্তর দেওয়ার",
+            "যদি উত্তর না পাওয়া যায়, CIBIL আপনার প্রমাণ অনুযায়ী আপডেট করবে",
+        ],
+        "te": [
+            "బ్యాంక్ నుండి మీ settlement letter సేకరించండి (మీ వద్ద లేకపోతే)",
+            "లేఖలో 'Settled' లేదా 'Closed' అని ఉందో చూడండి — 'Settled' స్కోర్ కి హాని కలిగిస్తుంది",
+            "బ్యాంక్ కి వ్రాయండి, స్థితిని 'Closed' గా మార్చమని అభ్యర్థించండి",
+            "బ్యాంక్ తిరస్కరిస్తే, cibil.com → Consumer Dispute వద్ద dispute దాఖలు చేయండి",
+            "పేర్కొనండి: 'Account fully settled, request status update to Closed'",
+            "CIBIL బ్యాంక్ తో సంప్రదిస్తుంది — బ్యాంక్ కి 30 రోజులు సమాధానం ఇవ్వడానికి ఉంటాయి",
+            "సమాధానం లేకపోతే, CIBIL మీ ఆధారాల ప్రకారం నవీకరిస్తుంది",
+        ],
+        "mr": [
+            "बँकेकडून तुमची settlement letter घ्या (जर तुमच्याकडे नसेल तर)",
+            "तपासा की पत्रात 'Settled' किंवा 'Closed' लिले आहे — 'Settled' स्कोरला हानी करतो",
+            "बँकेला लिहा की स्थिती 'Closed' मध्ये बदलावी म्हणून विनंती करा",
+            "बँकेने नाकारल्यास, cibil.com → Consumer Dispute वर dispute नोंदवा",
+            "उल्लेख करा: 'Account fully settled, request status update to Closed'",
+            "CIBIL बँकेशी संपर्क साठेल — बँकेकडे 30 दिवस आहेत उत्तरासाठी",
+            "उत्तर न मिळाल्यास, CIBIL तुमच्या पुराव्यांवरून अपडेट करेल",
+        ],
+        "ta": [
+            "வங்கியிலிருந்து உங்கள் settlement letter ஐ பெறுங்கள் (இல்லாவிட்டால்)",
+            "கடிதத்தில் 'Settled' அல்லது 'Closed' என்று உள்ளதா பாருங்கள் — 'Settled' ஸ்கோருக்கு சேதம் செய்கிறது",
+            "வங்கிக்கு எழுதுங்கள், நிலையை 'Closed' ஆக மாற்றுமாறு கேளுங்கள்",
+            "வங்கி மறுத்தால், cibil.com → Consumer Dispute இல் dispute பதிவு செய்யுங்கள்",
+            "குறிப்பிடுங்கள்: 'Account fully settled, request status update to Closed'",
+            "CIBIL வங்கியுடன் தொடர்பு கொள்ளும் — வங்கிக்கு 30 நாட்கள் பதிலளிக்க உள்ளன",
+            "பதில் இல்லையென்றால், CIBIL உங்கள் சான்றுகளின் படி புதுப்பிக்கும்",
+        ],
+        "gu": [
+            "બેંક પાસેથી તમારી settlement letter લો (જો તમારી પાસે ન હોય તો)",
+            "તપાસો કે પત્રમાં 'Settled' કે 'Closed' લખ્યું છે — 'Settled' સ્કોરને નુકસાન કરે છે",
+            "બેંકને લખો કે સ્થિતિ 'Closed' માં બદલવાની વિનંતી કરો",
+            "જો બેંક નકારે, તો cibil.com → Consumer Dispute પર dispute દાખલ કરો",
+            "ઉલ્લેખ કરો: 'Account fully settled, request status update to Closed'",
+            "CIBIL બેંક સાથે સંપર્ક કરશે — બેંક પાસે 30 દિવસ છે જવાબ આપવા માટે",
+            "જો જવાબ ન મળે, CIBIL તમારા પુરાવાઓ અનુસાર અપડેટ કરશે",
+        ],
+        "kn": [
+            "ಬ್ಯಾಂಕಿನಿಂದ ನಿಮ್ಮ settlement letter ಪಡೆಯಿರಿ (ನಿಮ್ಮ ಬಳಿ ಇಲ್ಲದಿದ್ದರೆ)",
+            "ಪತ್ರದಲ್ಲಿ 'Settled' ಅಥವಾ 'Closed' ಎಂದು ಇದೆಯೆ ಎಂದು ಪರಿಶೀಲಿಸಿ — 'Settled' ಸ್ಕೋರ್ ಗೆ ಹಾನಿ ಮಾಡುತ್ತದೆ",
+            "ಬ್ಯಾಂಕಿಗೆ ಬರೆಯಿರಿ, ಸ್ಥಿತಿಯನ್ನು 'Closed' ಗೆ ಬದಲಾಯಿಸಬೇಕೆಂದು ಕೇಳಿ",
+            "ಬ್ಯಾಂಕು ನಿರಾಕರಿಸಿದರೆ, cibil.com → Consumer Dispute ನಲ್ಲಿ dispute ಸಲ್ಲಿಸಿ",
+            "ಉಲ್ಲೇಖಿಸಿ: 'Account fully settled, request status update to Closed'",
+            "CIBIL ಬ್ಯಾಂಕಿನ ಜೊತೆ ಸಂಪರ್ಕಿಸುತ್ತದೆ — ಬ್ಯಾಂಕಿಗೆ 30 ದಿನಗಳು ಉತ್ತರಿಸಲು ಇವೆ",
+            "ಉತ್ತರ ಬರದಿದ್ದರೆ, CIBIL ನಿಮ್ಮ ಪ್ರಮಾಣಗಳ ಆಧಾರದ ಮೇಲೆ ನವೀಕರಿಸುತ್ತದೆ",
+        ],
+        "ml": [
+            "ബാങ്കിൽ നിന്ന് നിങ്ങളുടെ settlement letter ശേഖരിക്കുക (ഇല്ലെങ്കിൽ)",
+            "കത്തിൽ 'Settled' അല്ലെങ്കിൽ 'Closed' എന്ന് ഉണ്ടോ എന്ന് പരിശോധിക്കുക — 'Settled' സ്കോറിന് കേടുപാട് ചെയ്യുന്നു",
+            "ബാങ്കിന് എഴുതുക, നില 'Closed' ആക്കി മാറ്റാൻ അഭ്യർത്ഥിക്കുക",
+            "ബാങ്ക് നിരസിക്കുകയാണെങ്കിൽ, cibil.com → Consumer Dispute ൽ dispute സമർപ്പിക്കുക",
+            "പരാമർശിക്കുക: 'Account fully settled, request status update to Closed'",
+            "CIBIL ബാങ്കുമായി ബന്ധപ്പെടും — ബാങ്കിന് 30 ദിവസം മറുപടി നൽകാൻ ഉണ്ട്",
+            "മറുപടി ഇല്ലെങ്കിൽ, CIBIL നിങ്ങളുടെ തെളിവുകൾ അനുസരിച്ച് അപ്‌ഡേറ്റ് ചെയ്യും",
+        ],
+        "pa": [
+            "ਬੈਂਕ ਤੋਂ ਆਪਣੀ settlement letter ਲਵੋ (ਜੇ ਤੁਹਾਡੇ ਕੋਲ ਨਹੀਂ ਹੈ)",
+            "ਚੈੱਕ ਕਰੋ ਕਿ ਲੇਖ 'Settled' ਜਾਂ 'Closed' ਕਹਿੰਦਾ ਹੈ — 'Settled' ਸਕੋਰ ਨੂੰ ਨੁਕਸਾਨ ਪਹੁੰਚਾਉਂਦਾ ਹੈ",
+            "ਬੈਂਕ ਨੂੰ ਲਿਖੋ ਕਿ ਸਟੇਟਸ 'Closed' ਵਿੱਚ ਬਦਲਣ ਦੀ ਬੇਨਤੀ ਕਰੋ",
+            "ਜੇ ਬੈਂਕ ਇਨਕਾਰ ਕਰੇ, ਤਾਂ cibil.com → Consumer Dispute 'ਤੇ dispute ਦਰਜ ਕਰੋ",
+            "ਜ਼ਿਕਰ ਕਰੋ: 'Account fully settled, request status update to Closed'",
+            "CIBIL ਬੈਂਕ ਨਾਲ ਸੰਪਰਕ ਕਰੇਗਾ — ਬੈਂਕ ਕੋਲ 30 ਦਿਨ ਹਨ ਜਵਾਬ ਦੇਣ ਲਈ",
+            "ਜੇ ਜਵਾਬ ਨਹੀਂ ਮਿਲਦਾ, CIBIL ਤੁਹਾਡੇ ਸਬੂਤਾਂ ਅਨੁਸਾਰ ਅਪਡੇਟ ਕਰੇਗਾ",
+        ],
+    },
+    "overdue": {
+        "en": [
+            "Pay the overdue amount immediately — the longer you wait, the worse it gets",
+            "Call the bank and ask for a payment plan if you can't pay the full amount",
+            "Get written confirmation of any payment plan agreed",
+            "After payment, request a 'No Dues Certificate' from the bank",
+            "Submit this certificate to CIBIL at cibil.com → Consumer Dispute",
+            "Your score will start improving within 30-45 days of payment",
+        ],
+        "hi": [
+            "ਬਕਾਯਾ ਰਾਸ਼ੀ ਤੁਰੰਤ ਭਰੋ — ਜਿੰਨਾ ਦੇਰ ਤੱਕ ਰੁਕੋਗੇ, ਉੰਨਾ ਹੀ ਬੁਰਾ ਹੋਵੇਗਾ",
+            "ਬੈਂਕ ਨੂੰ ਕਾਲ ਕਰੋ ਅਤੇ ਪੇਮੈਂਟ ਪਲੈਨ ਮੰਗੋ ਜੇ ਤੁਸੀਂ ਪੂਰੀ ਰਾਸ਼ੀ ਨਹੀਂ ਭਰ ਸਕਦੇ",
+            "ਸਹਿਮਤ ਹੋਏ ਕਿਸੇ ਵੀ ਪੇਮੈਂਟ ਪਲੈਨ ਦੀ ਲਿਖਤੀ ਪੁਸ਼ਟੀ ਲਵੋ",
+            "ਭੁਗਤਾਨ ਤੋਂ ਬਾਅਦ, ਬੈਂਕ ਤੋਂ 'No Dues Certificate' ਮੰਗੋ",
+            "ਇਹ ਸਰਟੀਫਿਕੇਟ CIBIL ਨੂੰ cibil.com → Consumer Dispute ਤੇ ਭੇਜੋ",
+            "ਭੁਗਤਾਨ ਤੋਂ 30-45 ਦਿਨਾਂ ਵਿੱਚ ਤੁਹਾਡਾ ਸਕੋਰ ਸੁਧਰਨਾ ਸ਼ੁਰੂ ਹੋ ਜਾਵੇਗਾ",
+        ],
+        "bn": [
+            "বকেয়া পরিমাণ অবিলম্বে পরিশোধ করুন — যত দেরি করবেন তত খারাপ হবে",
+            "ব্যাংককে কল করুন এবং পেমেন্ট প্ল্যান চান যদি পুরো পরিমাণ পরিশোধ না করতে পারেন",
+            "সম্মত হওয়া যেকোনো পেমেন্ট প্ল্যানের লিখিত নিশ্চিততা নিন",
+            "পেমেন্টের পর, ব্যাংক থেকে 'No Dues Certificate' চান",
+            "এটি CIBIL কে cibil.com → Consumer Dispute এ জমা দিন",
+            "পেমেন্টের 30-45 দিনের মধ্যে আপনার স্কোর উন্নতি শুরু হবে",
+        ],
+        "te": [
+            "బకాయి మొత్తం వెంటనే చెల్లించండి — ఎంత ఎక్కువ సమయం వేచిస్తే అంత చెడ్డది",
+            "బ్యాంక్ కి కాల్ చేసి పేమెంట్ ప్లాన్ అడగండి మీరు పూర్తి మొత్తం చెల్లించలేకపోతే",
+            "అంగీకరించిన ఏదైనా పేమెంట్ ప్లాన్ యొక్క లిఖిత నిర్ధారణ తీసుకోండి",
+            "చెల్లింపు తర్వాత, బ్యాంక్ నుండి 'No Dues Certificate' కోరండి",
+            "ఈ సర్టిఫికేట్ ని CIBIL కి cibil.com → Consumer Dispute వద్ద సమర్పించండి",
+            "చెల్లింపు నుండి 30-45 రోజులలో మీ స్కోర్ మెరుగుపడటం ప్రారంభమవుతుంది",
+        ],
+        "mr": [
+            "बक्या रक्कम लगेच भरा — जितका वेळ थांबाल तितके वाईट होईल",
+            "बँकेला कॉल करा आणि पेमेंट प्लॅन मागा जर तुम्ही पूर्ण रक्कम भरू शकत नसाल",
+            "ठरलेल्या कोणत्याही पेमेंट प्लॅनची लिखित पुष्टी घ्या",
+            "पेमेंटनंतर, बँकेकडून 'No Dues Certificate' मागा",
+            "हे सर्टिफिकेट CIBIL ला cibil.com → Consumer Dispute वर पाठवा",
+            "पेमेंटपासून 30-45 दिवसांत तुमचा स्कोर सुधारण्यास सुरुवात होईल",
+        ],
+        "ta": [
+            "பாகியத் தொகையை உடனே செலுத்துங்கள் — எவ்வளவு நேரம் காத்தாலும் அவ்வளவு மோசமாகும்",
+            "வங்கிக்கு அழைத்து பேமெண்ட் பிளான் கேளுங்கள் நீங்கள் முழு தொகையும் செலுத்த முடியாவிட்டால்",
+            "ஒப்புக்கொண்ட எந்தவொரு பேமெண்ட் பிளானின் எழுத்துப்பூர்வ உறுதிப்பாட்டைப் பெறுங்கள்",
+            "பணம் செலுத்திய பிறகு, வங்கியிலிருந்து 'No Dues Certificate' கோருங்கள்",
+            "இச்சான்றிதழை CIBIL க்கு cibil.com → Consumer Dispute இல் சமர்ப்பிக்கவும்",
+            "பணம் செலுத்திய 30-45 நாட்களில் உங்கள் ஸ்கோர் மேம்பட ஆரம்பிக்கும்",
+        ],
+        "gu": [
+            "બકાયા રકમ તરત જ ચૂકવો — જેટલો સમય રાહ જુઓશો તેટલું ખરાબ હશે",
+            "બેંકને કોલ કરો અને પેમેન્ટ પ્લાન માંગો જો તમે પૂરી રકમ ચૂકવી શકતા ન હોય",
+            "સંમત થયેલ કોઈપણ પેમેન્ટ પ્લાનની લેખિત પુષ્ટિ લો",
+            "ચૂકવણી પછી, બેંક પાસેથી 'No Dues Certificate' માંગો",
+            "આ સર્ટિફિકેટ CIBIL ને cibil.com → Consumer Dispute પર મોકલો",
+            "ચૂકવણી પછી 30-45 દિવસમાં તમારો સ્કોર સુધરવા લાગશે",
+        ],
+        "kn": [
+            "ಬಾಕಿ ಮೊತ್ತವನ್ನು ತಕ್ಷಣವೇ ಪಾವತಿಸಿ — ಎಷ್ಟು ಹೆಚ್ಚು ಸಮಯ ಕಾಯುತ್ತೀರಿ ಅಷ್ಟೂ ಕೆಟ್ಟದ್ದು",
+            "ಬ್ಯಾಂಕಿಗೆ ಕರೆ ಮಾಡಿ ಪಾವತಿ ಯೋಜನೆ ಕೇಳಿ ನೀವು ಪೂರ್ಣ ಮೊತ್ತವನ್ನು ಪಾವತಿಸಲಾಗದಿದ್ದರೆ",
+            "ಒಪ್ಪಂದದ ಯಾವುದೇ ಪಾವತಿ ಯೋಜನೆಯ ಬರಹದ ಪ್ರಮಾಣಪತ್ರ ಪಡೆಯಿರಿ",
+            "ಪಾವತಿಯ ನಂತರ, ಬ್ಯಾಂಕಿನಿಂಡ 'No Dues Certificate' ಕೇಳಿ",
+            "ಈ ಪ್ರಮಾಣಪತ್ರವನ್ನು CIBIL ಗೆ cibil.com → Consumer Dispute ನಲ್ಲಿ ಸಲ್ಲಿಸಿ",
+            "ಪಾವತಿಯ 30-45 ದಿನಗಳಲ್ಲಿ ನಿಮ್ಮ ಸ್ಕೋರ್ ಸುಧಾರಣೆ ಆರಂಭವಾಗುತ್ತದೆ",
+        ],
+        "ml": [
+            "ബാക്കി തുക ഉടനെ അടയ്ക്കുക — എത്ര നേരം കാത്തിരിക്കുന്നു അത്ര മോശമാകുന്നു",
+            "ബാങ്കിന് വിളിച്ച് പേയ്മെന്റ് പ്ലാൻ ചോദിക്കുക നിങ്ങൾക്ക് പൂർണ്ണ തുക അടയ്ക്കാൻ കഴിയാത്തിട്ത്തിൽ",
+            "യോജിച്ച ഏതെങ്കിലും പേയ്മെന്റ് പ്ലാനിന്റെ എഴുത്തുപ്പൂർവ്വമായ സ്ഥിരീകരണം എടുക്കുക",
+            "പേയ്മെന്റിന് ശേഷം, ബാങ്കിൽ നിന്ന് 'No Dues Certificate' ആവശ്യപ്പെടുക",
+            "ഈ സർട്ടിഫിക്കറ്റ് CIBIL ന് cibil.com → Consumer Dispute ൽ സമർപ്പിക്കുക",
+            "പേയ്മെന്റിന് 30-45 ദിവസത്തിനുള്ളിൽ നിങ്ങളുടെ സ്കോർ മെച്ചപ്പെടാൻ തുടങ്ങും",
+        ],
+        "pa": [
+            "ਬਕਾਯਾ ਰਕਮ ਤੁਰੰਤ ਭਰੋ — ਜਿੰਨਾ ਦੇਰ ਤੱਕ ਰੁਕੋਗੇ, ਉੰਨਾ ਹੀ ਬੁਰਾ ਹੋਵੇਗਾ",
+            "ਬੈਂਕ ਨੂੰ ਕਾਲ ਕਰੋ ਅਤੇ ਪੇਮੈਂਟ ਪਲੈਨ ਮੰਗੋ ਜੇ ਤੁਸੀਂ ਪੂਰੀ ਰਕਮ ਨਹੀਂ ਭਰ ਸਕਦੇ",
+            "ਸਹਿਮਤ ਹੋਏ ਕਿਸੇ ਵੀ ਪੇਮੈਂਟ ਪਲੈਨ ਦੀ ਲਿਖਤੀ ਪੁਸ਼ਟੀ ਲਵੋ",
+            "ਭੁਗਤਾਨ ਤੋਂ ਬਾਅਦ, ਬੈਂਕ ਤੋਂ 'No Dues Certificate' ਮੰਗੋ",
+            "ਇਹ ਸਰਟੀਫਿਕੇਟ CIBIL ਨੂੰ cibil.com → Consumer Dispute ਤੇ ਭੇਜੋ",
+            "ਭੁਗਤਾਨ ਤੋਂ 30-45 ਦਿਨਾਂ ਵਿੱਚ ਤੁਹਾਡਾ ਸਕੋਰ ਸੁਧਰਨਾ ਸ਼ੁਰੂ ਹੋ ਜਾਵੇਗਾ",
+        ],
+    },
+}
+
+
 def _format_amount(amount: int, lang: str) -> str:
     """Format amount in Indian numbering system with ₹ symbol."""
     if amount == 0:
@@ -510,12 +793,19 @@ def _regex_fallback_parse(raw_text: str, language: str = "en") -> dict:
                 issue_type = "Red"
                 impact = "High"
                 details = f"Account shows negative status '{status_desc}'"
-                action = "Contact bank for settlement/NOC"
+                # Pick the right vernacular action steps
+                if "SETTLED" in remarks_upper or "SETTLED" in status_upper:
+                    action_key = "settled"
+                else:
+                    action_key = "written_off"
+                action_steps = ACTION_STEPS.get(action_key, {}).get(language, ACTION_STEPS[action_key]["en"])
+                action = " | ".join(action_steps[:3])  # First 3 steps as summary
             else:
                 issue_type = "Yellow"
                 impact = "Medium"
                 details = f"Overdue payment history: {status_desc}"
-                action = "Pay overdue amount immediately"
+                action_steps = ACTION_STEPS.get("overdue", {}).get(language, ACTION_STEPS["overdue"]["en"])
+                action = " | ".join(action_steps[:3])
 
             issues.append({
                 "account": account_title,
