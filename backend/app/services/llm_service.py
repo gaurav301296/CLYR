@@ -924,6 +924,10 @@ def _regex_fallback_parse(raw_text: str, language: str = "en") -> dict:
             letter_parts.append(f"TIMELINE: 30-45 days")
             letter_parts.append(f"SUCCESS_CHANCE: {'High' if issue['type'] == 'Red' else 'Medium'}")
             letter_parts.append("")
+            # Add NOC mention for written-off accounts
+            if action_key == "written_off":
+                letter_parts.append("IMPORTANT: Get NOC (No Objection Certificate) from bank after settlement")
+                letter_parts.append("")
     else:
         letter_parts.append("Good news — no major issues found in your report!")
         letter_parts.append("")
