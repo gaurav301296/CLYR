@@ -1,7 +1,9 @@
-import { Sparkles, RefreshCw, Globe, LogIn, LogOut, User } from 'lucide-react';
-import { LANGUAGES } from '../i18n/translations';
 import { useState } from 'react';
+import { RefreshCw, Globe, LogIn, LogOut } from 'lucide-react';
+import { LANGUAGES } from '../i18n/translations';
 import AuthModal from './AuthModal';
+
+const LOGO_PATH = '/logo-clyr.png';
 
 export default function Header({ lang, setLang, t, currentView, setCurrentView, reportData, handleReset, user, signOut }) {
   const [showAuth, setShowAuth] = useState(false);
@@ -16,11 +18,11 @@ export default function Header({ lang, setLang, t, currentView, setCurrentView, 
           style={{ cursor: 'pointer' }}
           role="button"
           tabIndex={0}
-          aria-label={`${t('brand')} - ${t('home')}`}
+          aria-label="CLYR - Home"
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setCurrentView('landing'); }}
         >
           <div className="brand-logo" aria-hidden="true">
-            <Sparkles size={28} strokeWidth={2.5} />
+            <img src={LOGO_PATH} alt="CLYR" width="38" height="38" />
           </div>
           <h1 className="brand-name">{t('brand')}</h1>
           <span className="badge-demo" aria-label="Beta version">{t('beta')}</span>
@@ -96,7 +98,7 @@ export default function Header({ lang, setLang, t, currentView, setCurrentView, 
                 onClick={signOut}
                 aria-label="Sign out"
               >
-                <LogOut size={14} aria-hidden="true" /> Sign Out
+                <LogOut size={14} aria-hidden="true" /> {t('profileSignOut')}
               </button>
             </div>
           ) : (
@@ -106,7 +108,7 @@ export default function Header({ lang, setLang, t, currentView, setCurrentView, 
               onClick={() => setShowAuth(true)}
               aria-label="Sign in"
             >
-              <LogIn size={14} aria-hidden="true" /> Sign In
+              <LogIn size={14} aria-hidden="true" /> {t('authSignInBtn')}
             </button>
           )}
         </div>

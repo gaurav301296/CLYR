@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLYR Dashboard — Live Output</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#090d16;--card:#111827;--border:#1e293b;--text:#e2e8f0;--text-dim:#94a3b8;--primary:#3b82f6;--primary-glow:rgba(59,130,246,.15);--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--radius:12px}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px;line-height:1.6}
+.container{max-width:960px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:24px}
+.header h1{font-size:20px;color:var(--primary)}
+.header .badge{background:var(--primary-glow);color:var(--primary);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:24px}
+@media(max-width:768px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px}
+.card h2{font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:16px}
+.score-gauge{text-align:center;padding:20px 0}
+.score-value{font-size:56px;font-weight:700;display:block}
+.score-label{font-size:14px;color:var(--text-dim)}
+.health-badge{display:inline-block;padding:4px 16px;border-radius:20px;font-size:13px;font-weight:600;margin-top:12px}
+.health-badge.green{background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.2)}
+.health-badge.yellow{background:rgba(245,158,11,.1);color:var(--yellow);border:1px solid rgba(245,158,11,.2)}
+.health-badge.red{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.client-meta{list-style:none;margin-top:16px}
+.client-meta li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.client-meta li:last-child{border-bottom:none}
+.client-meta .label{color:var(--text-dim)}
+.client-meta .value{font-weight:500}
+.issue-item{border-left:3px solid var(--yellow);padding:12px 16px;margin-bottom:12px;background:rgba(255,255,255,.02);border-radius:0 8px 8px 0}
+.issue-item.red{border-left-color:var(--red)}
+.issue-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.issue-account{font-size:15px;font-weight:600}
+.issue-badge{padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase}
+.issue-badge.red{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.issue-badge.yellow{background:rgba(245,158,11,.1);color:var(--yellow);border:1px solid rgba(245,158,11,.2)}
+.issue-detail{margin-bottom:6px;font-size:13px}
+.issue-detail strong{color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:2px}
+.checklist{list-style:none}
+.checklist li{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer}
+.checklist li:last-child{border-bottom:none}
+.checklist li:hover{background:rgba(255,255,255,.02);margin:0 -24px;padding:10px 24px}
+.checkbox{width:18px;height:18px;border:2px solid var(--border);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--green)}
+.timeline{list-style:none}
+.timeline-item{display:flex;gap:16px;padding:12px 0;border-bottom:1px solid var(--border)}
+.timeline-item:last-child{border-bottom:none}
+.timeline-dot{width:10px;height:10px;border-radius:50%;background:var(--primary);flex-shrink:0;margin-top:5px}
+.timeline-phase{font-size:14px;font-weight:600;display:block}
+.timeline-task{font-size:13px;color:var(--text-dim)}
+.simulator{background:linear-gradient(135deg,rgba(59,130,246,.05),rgba(16,185,129,.05));border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:16px}
+.sim-score{font-size:36px;font-weight:700;text-align:center}
+.sim-label{font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px}
+.letter-preview{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;white-space:pre-wrap;max-height:300px;overflow-y:auto;font-family:'Georgia',serif;line-height:1.8;color:var(--text-dim)}
+.download-btn{display:block;width:100%;padding:14px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;text-align:center;margin-top:16px;text-decoration:none}
+.download-btn:hover{opacity:.9}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>CLYR — Credit Report Analysis</h1>
+  <span class="badge">LIVE DEMO</span>
+</div>
+
+<div class="grid">
+
+<!-- LEFT COLUMN -->
+<div>
+
+<div class="card">
+  <h2>Score Summary</h2>
+  <div class="score-gauge">
+    <span class="score-value" style="color:#f59e0b">680</span>
+    <span class="score-label">out of 900</span>
+    <div class="health-badge yellow">Fair — Room to Improve</div>
+  </div>
+  <ul class="client-meta">
+    <li><span class="label">Customer</span><span class="value">Rahul Verma</span></li>
+    <li><span class="label">Bureau</span><span class="value">CIBIL</span></li>
+    <li><span class="label">Report Date</span><span class="value">May 24, 2026</span></li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>Score Simulator</h2>
+  <div class="simulator">
+    <div class="sim-score" style="color:#10b981">725</div>
+    <div class="sim-label">Estimated score after fixes</div>
+    <div style="text-align:center;font-size:12px;color:#10b981;margin-top:8px">↑ +45 points improvement</div>
+  </div>
+  <div style="margin-top:16px">
+    <label style="font-size:12px;color:var(--text-dim)">Credit Utilization</label>
+    <input type="range" min="0" max="100" value="25" style="width:100%;margin-top:8px">
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim)">
+      <span>0%</span><span>25% (optimal)</span><span>100%</span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- RIGHT COLUMN -->
+<div>
+
+<div class="card">
+  <h2>Issues Found (1)</h2>
+  <div class="issue-item red">
+    <div class="issue-header">
+      <span class="issue-account">SBI Credit Card</span>
+      <span class="issue-badge red">Red</span>
+    </div>
+    <div class="issue-detail"><strong>What</strong>Account shows negative status 'SETTLED'</div>
+    <div class="issue-detail"><strong>Impact</strong>Pulling score down by ~30-50 points</div>
+    <div class="issue-detail"><strong>Action</strong>Call SBI → Negotiate settlement → Get NOC → File CIBIL dispute</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Recovery Checklist</h2>
+  <ul class="checklist">
+    <li><span class="checkbox">☐</span>Pay the overdue amount immediately</li>
+    <li><span class="checkbox">☐</span>Call SBI and negotiate settlement (40-60% of outstanding)</li>
+    <li><span class="checkbox">☐</span>Get written settlement agreement before paying</li>
+    <li><span class="checkbox">☐</span>Collect receipt and request NOC within 7 days</li>
+    <li><span class="checkbox">☐</span>Submit NOC to CIBIL at cibil.com → Consumer Dispute</li>
+    <li><span class="checkbox">☐</span>Follow up after 30 days — status should change</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>Restoration Timeline</h2>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:var(--red)"></div>
+      <div>
+        <span class="timeline-phase">Immediate (Week 1)</span>
+        <span class="timeline-task">Call SBI, start settlement negotiation</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:var(--yellow)"></div>
+      <div>
+        <span class="timeline-phase">Days 7-30</span>
+        <span class="timeline-task">Complete payment, get NOC, file dispute</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:var(--green)"></div>
+      <div>
+        <span class="timeline-phase">Days 30-90</span>
+        <span class="timeline-task">CIBIL updates status, score improves to ~725</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Analysis Letter</h2>
+  <div class="letter-preview">Dear Rahul Verma,
+
+I've gone through your credit report carefully. Your score is 680 — this is decent, but there's room to improve. Don't worry, I'll explain exactly what's going on and what you can do about it.
+
+Here's what I found:
+
+ISSUE #1: SBI Credit Card
+WHAT: Account shows negative status 'SETTLED'
+IMPACT: This is pulling your score down by approximately 30-50 points.
+ACTION: Call SBI → Negotiate settlement → Get written agreement → Pay → Get NOC → File CIBIL dispute
+TIMELINE: 30-45 days
+SUCCESS_CHANCE: High
+
+SCORE PROJECTION:
+Current: 680
+After fixing all issues: 710-730
+Timeline: 90 days
+
+KEY STEPS:
+1. Call SBI customer care — ask for settlement amount (banks often accept 40-60%)
+2. Get settlement agreement in writing BEFORE making payment
+3. After payment, request NOC (No Objection Certificate) within 7 days
+4. File dispute at cibil.com → Consumer DisPUTE (FREE)
+5. If no response in 30 days, entry is REMOVED
+
+CLOSING: I know this looks like a lot, but take it one step at a time. Fix the first issue this week, and you'll already be on your way. You've got this.
+
+— CLYR</div>
+  <a class="download-btn" href="#">📥 Download Full Roadmap (PDF)</a>
+</div>
+
+</div>
+</div>
+
+<div style="text-align:center;padding:24px;color:var(--text-dim);font-size:12px">
+  CLYR v1.0 — AI Credit Report Analysis | 61 tests passing | <a href="http://localhost:8005/api/docs" style="color:var(--primary)">API Docs</a>
+</div>
+
+</div>
+</body>
+</html>

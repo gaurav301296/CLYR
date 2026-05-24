@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ShieldAlert, FileText, AlertTriangle, CheckCircle2, Mail, ArrowRight } from 'lucide-react';
+import { ShieldCheck, FileText, AlertTriangle, CheckCircle2, Mail, ArrowRight, Sparkles, Lock, Globe, TrendingUp } from 'lucide-react';
 import { joinWaitlist } from '../lib/supabase';
 import { trackEvent } from '../lib/analytics';
 import { validateEmail } from '../lib/validation';
@@ -31,13 +31,11 @@ export default function LandingPage({ t, selectPlan }) {
   const handleWaitlist = async (e) => {
     e.preventDefault();
     setEmailTouched(true);
-
     const result = validateEmail(email);
     if (!result.valid) {
       setEmailError(result.error);
       return;
     }
-
     setEmailError('');
     setWaitlistStatus('loading');
     try {
@@ -56,9 +54,10 @@ export default function LandingPage({ t, selectPlan }) {
     <div className="landing-container">
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
 
+      {/* Hero Section */}
       <section className="hero-section" role="region" aria-labelledby="hero-title">
         <div className="hero-tag" aria-hidden="true">
-          <ShieldAlert size={14} /> {t('demystify')}
+          <Sparkles size={14} /> {t('demystify')}
         </div>
         <h2 className="hero-title" id="hero-title">{t('heroTitle')}</h2>
         <p className="hero-subtitle">{t('heroSubtitle')}</p>
@@ -73,7 +72,7 @@ export default function LandingPage({ t, selectPlan }) {
             <Mail size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} aria-hidden="true" />
             <input
               type="email"
-              placeholder="Enter your email"
+              placeholder={t('heroWaitlistPlaceholder')}
               value={email}
               onChange={(e) => handleEmailChange(e.target.value)}
               onBlur={handleEmailBlur}
@@ -90,11 +89,11 @@ export default function LandingPage({ t, selectPlan }) {
           </div>
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-primary pulse-gold"
             style={{ width: 'auto', padding: '14px 24px' }}
             disabled={waitlistStatus === 'loading' || !isEmailValid}
           >
-            {waitlistStatus === 'loading' ? '...' : <><ArrowRight size={16} aria-hidden="true" /> Get Started</>}
+            {waitlistStatus === 'loading' ? '...' : <><ArrowRight size={16} aria-hidden="true" /> {t('heroCta')}</>}
           </button>
         </form>
         {emailTouched && emailError && (
@@ -102,18 +101,35 @@ export default function LandingPage({ t, selectPlan }) {
             {emailError}
           </p>
         )}
-        {waitlistStatus === 'success' && <p style={{ color: 'var(--color-green)', fontSize: '13px', marginTop: '8px' }} role="status">You are on the list! We will notify you when we launch.</p>}
-        {waitlistStatus === 'error' && <p style={{ color: 'var(--color-red)', fontSize: '13px', marginTop: '8px' }} role="alert">Something went wrong. Please try again.</p>}
+        {waitlistStatus === 'success' && <p style={{ color: 'var(--color-green)', fontSize: '13px', marginTop: '8px' }} role="status">{t('waitlistSuccess')}</p>}
+        {waitlistStatus === 'error' && <p style={{ color: 'var(--color-red)', fontSize: '13px', marginTop: '8px' }} role="alert">{t('waitlistError')}</p>}
 
         <button
           onClick={() => setShowAuth(true)}
-          style={{ marginTop: '16px', background: 'none', border: 'none', color: 'var(--primary-hover)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
+          style={{ marginTop: '16px', background: 'none', border: 'none', color: 'var(--primary)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
           aria-label="Already have an account? Sign in"
         >
           Already have an account? Sign in
         </button>
       </section>
 
+      {/* Social Proof */}
+      <section className="social-proof" aria-label="Social proof">
+        <div className="social-proof-item">
+          <div className="social-proof-value">5,000+</div>
+          <div className="social-proof-label">{t('reportsAnalyzed')}</div>
+        </div>
+        <div className="social-proof-item">
+          <div className="social-proof-value">4.8★</div>
+          <div className="social-proof-label">{t('happyUsers')}</div>
+        </div>
+        <div className="social-proof-item">
+          <div className="social-proof-value">+75</div>
+          <div className="social-proof-label">{t('avgScoreBoost')}</div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
       <section aria-labelledby="features-heading">
         <h2 id="features-heading" className="sr-only">Features</h2>
         <div className="features-grid">
@@ -121,6 +137,9 @@ export default function LandingPage({ t, selectPlan }) {
             { icon: FileText, title: t('featureParserTitle'), desc: t('featureParserDesc'), theme: '' },
             { icon: AlertTriangle, title: t('featureScanTitle'), desc: t('featureScanDesc'), theme: 'red-theme' },
             { icon: CheckCircle2, title: t('featureRoadmapTitle'), desc: t('featureRoadmapDesc'), theme: 'green-theme' },
+            { icon: TrendingUp, title: t('featureMoneyTitle'), desc: t('featureMoneyDesc'), theme: 'purple-theme' },
+            { icon: Lock, title: t('featureSecureTitle'), desc: t('featureSecureDesc'), theme: '' },
+            { icon: Globe, title: t('featureLanguagesTitle'), desc: t('featureLanguagesDesc'), theme: 'green-theme' },
           ].map((feature, i) => (
             <div key={i} className={`feature-card ${feature.theme}`} role="article">
               <div className="feature-icon-wrapper" aria-hidden="true">
@@ -133,17 +152,18 @@ export default function LandingPage({ t, selectPlan }) {
         </div>
       </section>
 
+      {/* Pricing Grid */}
       <section aria-labelledby="pricing-heading">
         <div className="pricing-title-container">
           <h2 id="pricing-heading">{t('choosePathTitle')}</h2>
-          <p style={{ color: 'var(--text-muted)' }}>{t('choosePathSubtitle')}</p>
+          <p style={{ color: 'var(--text-mid)' }}>{t('choosePathSubtitle')}</p>
         </div>
         <div className="pricing-grid" role="list">
           {['Starter', 'Follow-up', 'Recovery'].map((plan) => {
             const isPopular = plan === 'Follow-up';
-            const featuresKey = plan === 'Starter' ? ['starterFeature1', 'starterFeature2', 'starterFeature3']
-              : plan === 'Follow-up' ? ['followupFeature1', 'followupFeature2', 'followupFeature3']
-              : ['recoveryFeature1', 'recoveryFeature2', 'recoveryFeature3'];
+            const featuresKey = plan === 'Starter' ? ['starterFeature1', 'starterFeature2', 'starterFeature3', 'starterFeature4']
+              : plan === 'Follow-up' ? ['followupFeature1', 'followupFeature2', 'followupFeature3', 'followupFeature4', 'followupFeature5']
+              : ['recoveryFeature1', 'recoveryFeature2', 'recoveryFeature3', 'recoveryFeature4', 'recoveryFeature5'];
             const price = plan === 'Starter' ? 499 : plan === 'Follow-up' ? 799 : 1299;
             const chooseKey = plan === 'Starter' ? 'chooseStarter' : plan === 'Follow-up' ? 'chooseFollowup' : 'chooseRecovery';
             const packKey = plan === 'Starter' ? 'starterPack' : plan === 'Follow-up' ? 'followupPack' : 'recoveryPack';

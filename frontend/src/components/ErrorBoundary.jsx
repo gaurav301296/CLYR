@@ -31,15 +31,18 @@ export default class ErrorBoundary extends Component {
             textAlign: 'center'
           }}
         >
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>Something went wrong</div>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>😅</div>
+          <h2 style={{ fontSize: '22px', marginBottom: '12px', color: 'var(--text-highlight)' }}>
+            Oops! Kuch ho gaya...
+          </h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '24px', maxWidth: '400px' }}>
-            An unexpected error occurred. Please refresh the page and try again.
+            Koi unexpected error aa gayi. Refresh karke dobara try karo. Agar problem rahi, toh humein batana — hum fix kar lenge.
           </p>
           <button className="btn btn-primary" onClick={() => {
             this.setState({ hasError: false, error: null });
             window.location.reload();
           }}>
-            Refresh Page
+            Refresh Karo
           </button>
         </div>
       );
