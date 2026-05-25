@@ -101,6 +101,9 @@ if frontend_dist.exists():
     @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_frontend(full_path: str):
         """Serve React SPA for all non-API routes."""
+        # Don't intercept API routes
+        if full_path.startswith("api/") or full_path.startswith("docs") or full_path.startswith("redoc"):
+            raise HTTPException(status_code=404, detail="Not Found")
         return HTMLResponse(Path(frontend_dist / "index.html").read_text())
 
 
