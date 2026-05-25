@@ -1,11 +1,20 @@
+"""
+CLYR v2 — User Routes (SQLite + JWT)
+Auth, reports, payments, DSA — all using local SQLite.
+"""
 import os
 import json
+import time
+import logging
+from uuid import uuid4
 from fastapi import APIRouter, Request, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from app.middleware.auth import get_current_user, get_optional_user
 from app.services.auth_service import signup_user, login_user, get_user_by_id
 from app.services.payment_service import create_order, verify_payment, PLAN_PRICES
-from app.services import db_service
+from app.database import db_insert, db_select, db_update, db_count, get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["user"])
 
@@ -14,11 +23,6 @@ class EmailSignupRequest(BaseModel):
     email: EmailStr
     password: str
     full_name: str = ""
-
-
-class WaitlistRequest(BaseModel):
-    email: EmailStr
-    source: str = "landing_page"
 
 
 class RazorpayVerifyRequest(BaseModel):
@@ -35,7 +39,6 @@ async def signup(req: EmailSignupRequest):
     """Sign up a new user with email + password."""
     try:
         user = signup_user(req.email, req.password, req.full_name)
-        db_service.log_security_event("signup", user_id=user["id"])
         return {"message": "Signup successful.", "user": user}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -48,7 +51,6 @@ async def login(req: EmailSignupRequest):
     """Login with email + password."""
     try:
         result = login_user(req.email, req.password)
-        db_service.log_security_event("login", user_id=result["user"]["id"])
         return result
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
@@ -59,7 +61,6 @@ async def login(req: EmailSignupRequest):
 @router.post("/auth/logout")
 async def logout(user: dict = Depends(get_current_user)):
     """Logout current user (client-side token removal)."""
-    db_service.log_security_event("logout", user_id=user["id"])
     return {"message": "Logged out successfully"}
 
 
@@ -74,29 +75,17 @@ async def get_me(user: dict = Depends(get_current_user)):
 @router.get("/user/reports")
 async def get_my_reports(user: dict = Depends(get_current_user)):
     """Get all reports for current user."""
-    reports = db_service.get_user_reports(user["id"])
+    reports = db_select("reports", filters={"user_id": user["id"]}, order_by="-created_at")
     return reports
 
 
 @router.get("/user/reports/{report_id}")
 async def get_report(report_id: str, user: dict = Depends(get_current_user)):
     """Get a specific report by ID."""
-    report = db_service.get_report_by_id(report_id)
-    if not report:
+    rows = db_select("reports", filters={"id": report_id})
+    if not rows:
         raise HTTPException(status_code=404, detail="Report not found")
-    return report
-
-
-# ─── Waitlist Route ──────────────────────────────────────────────────────────
-
-@router.post("/waitlist")
-async def join_waitlist(req: WaitlistRequest):
-    """Add email to waitlist."""
-    added = db_service.add_to_waitlist(req.email, req.source)
-    count = db_service.get_waitlist_count()
-    if added:
-        return {"message": "Added to waitlist", "email": req.email, "position": count}
-    return {"message": "Already on waitlist", "email": req.email, "position": count}
+    return rows[0]
 
 
 # ─── Payment Routes ──────────────────────────────────────────────────────────
@@ -113,15 +102,18 @@ async def create_payment_order(
 
     try:
         order = create_order(plan, user["id"], report_id)
-        # Save order to DB
-        db_service.create_order_record(
-            user_id=user["id"],
-            report_id=report_id,
-            plan=plan,
-            amount=order["amount"],
-            currency=order["currency"],
-            razorpay_order_id=order["razorpay_order_id"],
-        )
+        db_insert("orders", {
+            "id": str(uuid4()),
+            "user_id": user["id"],
+            "report_id": report_id,
+            "plan": plan,
+            "amount": order["amount"],
+            "currency": order["currency"],
+            "razorpay_order_id": order["razorpay_order_id"],
+            "status": "created",
+            "created_at": time.time(),
+            "updated_at": time.time(),
+        })
         return {
             "order_id": order["razorpay_order_id"],
             "amount": order["amount"],
@@ -142,19 +134,16 @@ async def verify_payment_endpoint(
     """Verify Razorpay payment and update order status."""
     is_valid = verify_payment(req.razorpay_order_id, req.razorpay_payment_id, req.razorpay_signature)
     if not is_valid:
-        db_service.log_security_event("payment_failed", user_id=user["id"],
-                                     details=f"Order: {req.razorpay_order_id}")
         raise HTTPException(status_code=400, detail="Payment verification failed")
 
-    # Update order in DB
-    db_service.update_order_payment(
-        order_id=req.razorpay_order_id,
-        razorpay_payment_id=req.razorpay_payment_id,
-        razorpay_signature=req.razorpay_signature,
-        status="paid",
-    )
-    db_service.log_security_event("payment_success", user_id=user["id"],
-                                 details=f"Order: {req.razorpay_order_id}")
+    orders = db_select("orders", filters={"razorpay_order_id": req.razorpay_order_id})
+    if orders:
+        db_update("orders", {
+            "razorpay_payment_id": req.razorpay_payment_id,
+            "razorpay_signature": req.razorpay_signature,
+            "status": "paid",
+        }, {"id": orders[0]["id"]})
+
     return {"message": "Payment verified successfully", "status": "paid"}
 
 
@@ -170,23 +159,34 @@ class DsaLeadRequest(BaseModel):
 
 @router.get("/dsa/stats")
 async def get_dsa_stats(user: dict = Depends(get_current_user)):
-    """Get DSA partner stats for the authenticated user."""
-    return db_service.get_dsa_stats(user["id"])
+    """Get DSA partner stats."""
+    db = get_db()
+    leads = db.execute(
+        "SELECT COUNT(*) as total, SUM(commission) as total_commission FROM dsa_leads WHERE dsa_user_id = ?",
+        (user["id"],),
+    ).fetchone()
+    return {
+        "total_leads": leads["total"] if leads else 0,
+        "total_commission": leads["total_commission"] if leads else 0,
+    }
 
 
 @router.get("/dsa/leads")
 async def get_dsa_leads(user: dict = Depends(get_current_user)):
     """Get all leads for the authenticated DSA partner."""
-    leads = db_service.get_dsa_leads(user["id"])
-    # Format for frontend
+    db = get_db()
+    rows = db.execute(
+        "SELECT * FROM dsa_leads WHERE dsa_user_id = ? ORDER BY created_at DESC",
+        (user["id"],),
+    ).fetchall()
     return [{
-        "name": lead["client_name"],
-        "score": lead["score"],
-        "date": lead["created_at"],
-        "plan": lead["plan"],
-        "status": lead["status"],
-        "commission": lead["commission"],
-    } for lead in leads]
+        "name": l["client_name"],
+        "score": l["score"],
+        "date": l["created_at"],
+        "plan": l["plan"],
+        "status": l["status"],
+        "commission": l["commission"],
+    } for l in (dict(r) for r in rows)]
 
 
 @router.post("/dsa/leads")
@@ -195,16 +195,32 @@ async def create_dsa_leads(
     user: dict = Depends(get_current_user),
 ):
     """Bulk create leads for the authenticated DSA partner."""
-    lead_dicts = [lead.model_dump() for lead in leads]
-    count = db_service.save_dsa_leads(user["id"], lead_dicts)
+    db = get_db()
+    count = 0
+    for lead in leads:
+        lead_id = f"dsa_{uuid4().hex[:12]}"
+        db.execute(
+            "INSERT INTO dsa_leads (id, dsa_user_id, client_name, score, plan, status, commission, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (lead_id, user["id"], lead.name, lead.score, lead.plan, lead.status, lead.commission, time.time()),
+        )
+        count += 1
+    db.commit()
     return {"message": f"Created {count} leads", "count": count}
 
 
 @router.get("/dsa/referral-link")
 async def get_referral_link(user: dict = Depends(get_current_user)):
     """Get or create referral link for the authenticated DSA partner."""
-    ref = db_service.get_or_create_referral(user["id"])
-    return {
-        "referral_code": ref["referral_code"],
-        "referral_link": ref["referral_link"],
-    }
+    db = get_db()
+    row = db.execute("SELECT * FROM dsa_referrals WHERE user_id = ?", (user["id"],)).fetchone()
+    if not row:
+        code = f"CLYR-{uuid4().hex[:8].upper()}"
+        link = f"https://clyr.in/ref/{code}"
+        db.execute(
+            "INSERT INTO dsa_referrals (user_id, referral_code, referral_link, created_at) VALUES (?, ?, ?, ?)",
+            (user["id"], code, link, time.time()),
+        )
+        db.commit()
+        return {"referral_code": code, "referral_link": link}
+    d = dict(row)
+    return {"referral_code": d["referral_code"], "referral_link": d["referral_link"]}

@@ -1,26 +1,27 @@
-import { ShieldCheck, Lock, Heart } from 'lucide-react';
-
+/**
+ * CLYR v2 — Footer Component
+ */
 export default function Footer({ t }) {
   return (
-    <footer className="app-footer" role="contentinfo">
-      <p>&copy; {new Date().getFullYear()} CLYR. {t('footerText')}</p>
-      <p style={{ marginTop: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>
-        {t('footerDisclaimer')}
-      </p>
-      <div className="footer-trust">
-        <div className="footer-trust-item">
-          <Lock size={12} /> Bank-level encryption
+    <footer className="footer" role="contentinfo">
+      <div className="footer-inner">
+        <div className="footer-brand">
+          <span className="footer-logo">CLYR</span>
+          <span className="footer-tagline">{t('demystify') || 'CIBIL ka tod-fod, asaan bhasha mein'}</span>
         </div>
-        <div className="footer-trust-item">
-          <ShieldCheck size={12} /> Razorpay secured
+        <div className="footer-links">
+          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="footer-link">
+            {t('home') || 'Home'}
+          </button>
+          <a href="#features" className="footer-link">Features</a>
+          <a href="#pricing" className="footer-link">Pricing</a>
+          <a href="#faq" className="footer-link">FAQ</a>
         </div>
-        <div className="footer-trust-item">
-          100% Private
+        <div className="footer-bottom">
+          <span>© {new Date().getFullYear()} CLYR. All rights reserved.</span>
+          <span className="footer-secure">🔒 256-bit SSL Encrypted</span>
         </div>
       </div>
-      <p className="footer-madein">
-        Made with <Heart size={12} style={{ color: 'var(--color-red)' }} /> in India 🇮🇳
-      </p>
     </footer>
   );
 }

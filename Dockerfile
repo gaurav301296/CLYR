@@ -1,5 +1,5 @@
-# Dockerfile for CLYR - AI Credit Report Analysis
-# Multi-stage build for production deployment
+# CLYR v2 — Production Dockerfile
+# Multi-stage build: frontend (Node) + backend (Python)
 
 # Stage 1: Build frontend
 FROM node:20-alpine AS frontend-build
@@ -19,22 +19,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY backend/requirements.txt .
+COPY backend/requirements-v2.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
 COPY backend/ ./backend/
 
-# Copy built frontend from stage 1
+# Copy built frontend
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
-# Create non-root user
-RUN useradd --create-home appuser
-USER appuser
-
 # Environment
-ENV CLYR_DB_PATH=/app/data/clyr.db
 ENV PYTHONPATH=/app/backend
+ENV CLYR_DB_PATH=/app/data/clyr.db
+
+# Create non-root user
+RUN useradd --create-home appuser && mkdir -p /app/data && chown -R appuser:appuser /app
+USER appuser
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
@@ -43,4 +43,4 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
 EXPOSE 8005
 
 # Run
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8005"]
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8005", "--workers", "2"]

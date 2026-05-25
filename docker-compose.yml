@@ -1,21 +1,28 @@
 version: '3.8'
 
 services:
-  backend:
-    build: ./backend
+  clyr:
+    build: .
     ports:
       - "8005:8005"
     environment:
+      - ENVIRONMENT=production
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - CORS_ORIGINS=http://localhost:5173,http://localhost
+      - OPENAI_BASE_URL=https://openrouter.ai/api/v1
+      - OPENAI_MODEL=${OPENAI_MODEL:-openrouter/owl-alpha}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://clyr.in,https://www.clyr.in}
     volumes:
-      - /tmp:/tmp
+      - clyr-data:/app/data
     restart: unless-stopped
 
-  frontend:
-    build: ./frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
+volumes:
+  clyr-data:

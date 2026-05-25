@@ -1,5 +1,9 @@
+/**
+ * CLYR v2 — Error Boundary
+ * Catches React errors and shows a friendly fallback.
+ */
 import { Component } from 'react';
-import logger from '../lib/logger';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -12,41 +16,30 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    logger.error('ErrorBoundary caught', {
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo?.componentStack,
-    });
+    console.error('CLYR Error Boundary caught:', error, errorInfo);
   }
+
+  handleReset = () => {
+    this.setState({ hasError: false, error: null });
+    window.location.reload();
+  };
 
   render() {
     if (this.state.hasError) {
       return (
-        <div
-          role="alert"
-          aria-live="assertive"
-          style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', minHeight: '60vh', padding: '40px 24px',
-            textAlign: 'center'
-          }}
-        >
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>😅</div>
-          <h2 style={{ fontSize: '22px', marginBottom: '12px', color: 'var(--text-highlight)' }}>
-            Oops! Kuch ho gaya...
-          </h2>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', padding: '24px', textAlign: 'center' }}>
+          <AlertCircle size={48} style={{ color: 'var(--color-red)', marginBottom: '16px' }} />
+          <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>Kuch Galat Ho Gaya</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '24px', maxWidth: '400px' }}>
-            Koi unexpected error aa gayi. Refresh karke dobara try karo. Agar problem rahi, toh humein batana — hum fix kar lenge.
+            Sorry, kuch technical problem aa gayi. Page refresh karke phir se try karo.
           </p>
-          <button className="btn btn-primary" onClick={() => {
-            this.setState({ hasError: false, error: null });
-            window.location.reload();
-          }}>
-            Refresh Karo
+          <button className="btn btn-primary" onClick={this.handleReset}>
+            <RefreshCw size={16} /> Page Refresh Karo
           </button>
         </div>
       );
     }
+
     return this.props.children;
   }
 }

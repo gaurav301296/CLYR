@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { CheckCircle2, AlertTriangle, ArrowLeft, Loader2, ShieldCheck, CreditCard } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8005/api";
+import { apiFetch } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 const PLAN_PRICES = {
   'Starter': 499,
@@ -29,19 +29,15 @@ function loadRazorpayScript() {
   });
 }
 
-export default function PaymentPage({ t, selectedPlan, planKey, setCurrentView }) {
+export default function PaymentPage({ t, selectedPlan, planKey, setCurrentView, handlePaymentSuccess }) {
+  const { user } = useAuth();
   const [status, setStatus] = useState('idle'); // idle | loading | processing | success | error
   const [errorMsg, setErrorMsg] = useState('');
-  const [orderData, setOrderData] = useState(null);
 
   const planName = selectedPlan || 'Starter';
-  const planLabel = t(planKey(planName));
+  const planLabel = t(planKey);
   const price = PLAN_PRICES[planName] || 499;
   const features = PLAN_FEATURES[planName] || PLAN_FEATURES['Starter'];
-
-  const getAuthToken = useCallback(() => {
-    return localStorage.getItem('access_token') || '';
-  }, []);
 
   const handlePayNow = useCallback(async () => {
     setStatus('loading');
@@ -50,66 +46,53 @@ export default function PaymentPage({ t, selectedPlan, planKey, setCurrentView }
     try {
       await loadRazorpayScript();
 
-      const token = getAuthToken();
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const createRes = await fetch(`${API_BASE}/payment/create-order`, {
+      // Step 1: Create order via apiFetch
+      const order = await apiFetch('/payments/create-order', {
         method: 'POST',
-        headers,
-        body: JSON.stringify({
-          plan: planName,
-          report_id: `temp_${Date.now()}`,
-        }),
+        body: JSON.stringify({ plan: planName }),
       });
 
-      if (!createRes.ok) {
-        const errData = await createRes.json().catch(() => ({}));
-        throw new Error(errData.detail || 'Failed to create payment order');
+      if (!order || !order.order_id) {
+        throw new Error('Invalid order response from server');
       }
 
-      const order = await createRes.json();
-      setOrderData(order);
+      const razorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
+      if (!razorpayKeyId) {
+        throw new Error('Razorpay key not configured. Please contact support.');
+      }
+
+      // Step 2: Open Razorpay checkout modal
       const options = {
-        key: order.razorpay_key_id,
+        key: razorpayKeyId,
         amount: order.amount,
-        currency: order.currency,
+        currency: order.currency || 'INR',
         name: 'CLYR',
         description: `${planLabel} - Credit Report Analysis`,
         order_id: order.order_id,
         handler: async (response) => {
+          // Step 3: Verify payment
           setStatus('processing');
           try {
-            const token = getAuthToken();
-            const headers = { 'Content-Type': 'application/json' };
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-
-            const verifyRes = await fetch(`${API_BASE}/payment/verify`, {
+            await apiFetch('/payments/verify', {
               method: 'POST',
-              headers,
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                report_id: order.report_id || `temp_${Date.now()}`,
               }),
             });
-
-            if (!verifyRes.ok) {
-              const errData = await verifyRes.json().catch(() => ({}));
-              throw new Error(errData.detail || 'Payment verification failed');
-            }
-
             setStatus('success');
           } catch (verifyErr) {
             setStatus('error');
-            setErrorMsg(verifyErr.message || 'Payment verification failed. Please contact support.');
+            setErrorMsg(
+              verifyErr.message || 'Payment verification failed. Please contact support.'
+            );
           }
         },
         prefill: {
-          name: '',
-          email: '',
+          name: user?.full_name || '',
+          email: user?.email || '',
         },
         theme: {
           color: '#2563eb',
@@ -129,8 +112,9 @@ export default function PaymentPage({ t, selectedPlan, planKey, setCurrentView }
       setStatus('error');
       setErrorMsg(err.message || 'Something went wrong. Please try again.');
     }
-  }, [planName, planLabel, getAuthToken, status]);
+  }, [planName, planLabel, user, status]);
 
+  // Success screen
   if (status === 'success') {
     return (
       <div style={{ maxWidth: '560px', margin: '60px auto 0', textAlign: 'center', padding: '0 16px' }}>
@@ -159,20 +143,21 @@ export default function PaymentPage({ t, selectedPlan, planKey, setCurrentView }
             Your <strong style={{ color: 'var(--text-highlight)' }}>{planLabel}</strong> plan has been activated.
           </p>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '32px' }}>
-            You can now upload your credit report to get started.
+            Your report is ready. Download your full analysis now.
           </p>
           <button
             className="btn btn-primary"
-            onClick={() => setCurrentView('uploader')}
+            onClick={() => handlePaymentSuccess ? handlePaymentSuccess(planName) : setCurrentView('dashboard')}
             style={{ width: 'auto', padding: '14px 32px', fontSize: '15px' }}
           >
-            Continue to Upload
+            Download Report →
           </button>
         </div>
       </div>
     );
   }
 
+  // Order summary + pay button
   return (
     <div style={{ maxWidth: '560px', margin: '40px auto 0', padding: '0 16px' }}>
       <button
@@ -223,6 +208,7 @@ export default function PaymentPage({ t, selectedPlan, planKey, setCurrentView }
           </div>
         </div>
 
+        {/* Order Summary */}
         <div style={{
           background: 'rgba(255,255,255,0.02)',
           border: '1px solid var(--border)',
@@ -260,6 +246,7 @@ export default function PaymentPage({ t, selectedPlan, planKey, setCurrentView }
           </div>
         </div>
 
+        {/* Error message */}
         {status === 'error' && errorMsg && (
           <div
             role="alert"
@@ -279,6 +266,7 @@ export default function PaymentPage({ t, selectedPlan, planKey, setCurrentView }
           </div>
         )}
 
+        {/* Pay button */}
         <button
           className="btn btn-primary"
           onClick={handlePayNow}

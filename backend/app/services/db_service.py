@@ -44,6 +44,7 @@ def init_db():
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             full_name TEXT DEFAULT '',
+            role TEXT DEFAULT 'user',
             created_at REAL NOT NULL,
             updated_at REAL NOT NULL
         );
@@ -69,6 +70,7 @@ def init_db():
             timeline_json TEXT DEFAULT '[]',
             general_health TEXT DEFAULT '',
             status TEXT DEFAULT 'completed',
+            pdf_url TEXT DEFAULT '',
             created_at REAL NOT NULL,
             updated_at REAL NOT NULL
         );
@@ -94,6 +96,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE NOT NULL,
             source TEXT DEFAULT 'landing_page',
+            converted INTEGER DEFAULT 0,
             created_at REAL NOT NULL
         );
 

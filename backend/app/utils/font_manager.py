@@ -78,9 +78,11 @@ def ensure_fonts(lang_code: str):
             # Use jsDelivr CDN for stable, versioned font delivery
             # Falls back to GitHub raw if CDN fails
             url = f"https://cdn.jsdelivr.net/gh/notofonts/noto-fonts@main/hinted/ttf/{font_family}/{file_name}"
-            from app.utils.ssrf import is_safe_url
-            if not is_safe_url(url):
-                logger.error(f"Font download URL failed SSRF check: {url}")
+            # Simple SSRF check — only allow known CDN domains
+            allowed_hosts = {"cdn.jsdelivr.net", "github.com", "raw.githubusercontent.com"}
+            from urllib.parse import urlparse
+            if urlparse(url).hostname not in allowed_hosts:
+                logger.error(f"Font download URL not in allowlist: {url}")
                 return "Helvetica", "Helvetica-Bold"
             logger.info(f"Downloading font {file_name} from {url}...")
             temp_path = f"{local_path}.tmp"

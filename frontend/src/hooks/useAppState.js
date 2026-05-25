@@ -1,24 +1,41 @@
+/**
+ * CLYR v2 — App State Hook
+ * Central state management for the entire frontend.
+ *
+ * User flow:
+ * 1. Landing → click "Upload" → UploadPage
+ * 2. Upload PDF → analysis starts → DashboardPage (free preview)
+ * 3. Dashboard shows score, issues, but PDF download requires payment
+ * 4. Click download → PaymentPage → Razorpay → success → can download
+ */
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { translations, LANGUAGES } from '../i18n/translations';
-import logger from '../lib/logger';
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8005/api";
+import { apiFetch, apiUpload } from '../api/client';
+import { translations } from '../i18n/translations';
 
 export function useAppState() {
-  const [lang, setLang] = useState('en');
+  const [lang, setLang] = useState(() => localStorage.getItem('clyr_lang') || 'en');
   const [currentView, setCurrentView] = useState('landing');
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState("");
-  const [reportData, setReportData] = useState(null);
+  const [loadingStep, setLoadingStep] = useState('');
+  const [reportData, setReportData] = useState(() => {
+    // Restore from session storage
+    try {
+      const saved = sessionStorage.getItem('clyr_report');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
   const [error, setError] = useState(null);
   const [checkedTasks, setCheckedTasks] = useState(new Set());
   const [downloading, setDownloading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState('Starter');
+  const [paymentDone, setPaymentDone] = useState(false);
   const [simulatorResolutions, setSimulatorResolutions] = useState(new Set());
   const [utilizationSlider, setUtilizationSlider] = useState(60);
 
+  // Translation function — looks up key in current language, falls back to English, then to key itself
   const t = useCallback((key) => {
-    return (translations[lang] && translations[lang][key]) || (translations['en'] && translations['en'][key]) || key;
+    const langTranslations = translations[lang] || translations['en'] || {};
+    return langTranslations[key] || translations['en']?.[key] || key;
   }, [lang]);
 
   const planKey = useCallback((plan) => {
@@ -31,8 +48,19 @@ export function useAppState() {
     t('loadingStage4'), t('loadingStage5'), t('loadingStage6')
   ], [t]);
 
-  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+  // Persist language and report data
+  useEffect(() => {
+    localStorage.setItem('clyr_lang', lang);
+    document.documentElement.lang = lang;
+  }, [lang]);
 
+  useEffect(() => {
+    if (reportData) {
+      sessionStorage.setItem('clyr_report', JSON.stringify(reportData));
+    }
+  }, [reportData]);
+
+  // Loading animation
   useEffect(() => {
     let interval;
     if (loading) {
@@ -46,74 +74,93 @@ export function useAppState() {
     return () => clearInterval(interval);
   }, [loading, loadingStages]);
 
-  const processFile = useCallback(async (targetFile) => {
+  // File upload + analysis
+  const processFile = useCallback(async (file) => {
     setLoading(true);
     setError(null);
     setReportData(null);
+    setPaymentDone(false);
     setCheckedTasks(new Set());
-    const formData = new FormData();
-    formData.append("file", targetFile);
-    const startTime = Date.now();
+
     try {
-      logger.info('Uploading file', { name: targetFile.name, size: targetFile.size });
-      const response = await fetch(`${API_BASE}/upload`, { method: "POST", body: formData });
-      logger.api('POST', '/upload', response.status, Date.now() - startTime);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to process the credit report PDF.');
-      }
-      const data = await response.json();
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const data = await apiUpload('/reports/upload', formData);
       setReportData(data);
       setCurrentView('dashboard');
-      logger.track('report_generated', { score: data.score, issues: data.issues?.length || 0 });
     } catch (err) {
-      logger.error('File upload failed', { error: err.message, name: targetFile.name });
-      setError(err.message || 'An unexpected error occurred while parsing the credit report.');
+      setError(err.message || 'Failed to process the credit report. Please try again.');
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // PDF download — requires payment
   const handleDownloadPDF = useCallback(async () => {
+    if (!reportData) return;
+
+    // If already paid, download directly
+    if (paymentDone) {
+      await doDownload();
+      return;
+    }
+
+    // Otherwise, go to payment
+    setCurrentView('payment');
+  }, [reportData, paymentDone]);
+
+  const doDownload = async () => {
     if (!reportData) return;
     setDownloading(true);
     setError(null);
-    const startTime = Date.now();
+
     try {
-      logger.info('Downloading PDF', { customer: reportData.customer_name });
-      const response = await fetch(`${API_BASE}/download`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...reportData, language: lang })
+      const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:8005/api'}/pdf/download/${reportData.id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('clyr_token') || ''}`,
+        },
       });
-      logger.api('POST', '/download', response.status, Date.now() - startTime);
-      if (!response.ok) throw new Error('Failed to compile and download PDF.');
+
+      if (!response.ok) throw new Error('Download failed');
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
-      link.setAttribute("download", `CLYR_Roadmap_${reportData.customer_name.replace(/\s+/g, '_')}.pdf`);
+      link.setAttribute('download', `CLYR_Report_${(reportData.customer_name || 'report').replace(/\s+/g, '_')}.pdf`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      logger.track('pdf_downloaded', { customer: reportData.customer_name });
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      logger.error('PDF download failed', { error: err.message });
       setError('Failed to download PDF. Please try again.');
     } finally {
       setDownloading(false);
     }
-  }, [reportData, lang]);
+  };
 
+  // Payment success callback
+  const handlePaymentSuccess = useCallback((plan) => {
+    setPaymentDone(true);
+    setSelectedPlan(plan);
+    setCurrentView('dashboard');
+  }, []);
+
+  // Reset everything
   const handleReset = useCallback(() => {
     setReportData(null);
     setError(null);
     setCheckedTasks(new Set());
     setSimulatorResolutions(new Set());
+    setPaymentDone(false);
     setCurrentView('landing');
-    setSelectedPlan(null);
+    setSelectedPlan('Starter');
+    sessionStorage.removeItem('clyr_report');
   }, []);
 
+  // Toggle checklist item
   const handleToggleTask = useCallback((index) => {
     setCheckedTasks(prev => {
       const next = new Set(prev);
@@ -122,12 +169,14 @@ export function useAppState() {
     });
   }, []);
 
-  // NOT using useCallback — this ensures the function always has access to current state setters
-  const selectPlan = (plan) => {
+  // Plan selection from landing
+  const selectPlan = useCallback((plan) => {
     setSelectedPlan(plan);
-    setCurrentView('payment');
-  };
+    // Go directly to upload — payment happens after analysis
+    setCurrentView('uploader');
+  }, []);
 
+  // Score simulation
   const getUtilPoints = useCallback((val) => {
     if (val < 10) return 35;
     if (val <= 30) return 20;
@@ -143,7 +192,7 @@ export function useAppState() {
     if (reportData.issues) {
       reportData.issues.forEach((issue, idx) => {
         if (simulatorResolutions.has(idx)) {
-          const isCritical = ['critical', 'red', 'major'].includes(issue.type.toLowerCase());
+          const isCritical = ['critical', 'red', 'major'].includes((issue.type || '').toLowerCase());
           score += isCritical ? 45 : 25;
         }
       });
@@ -155,24 +204,25 @@ export function useAppState() {
   const simulatedScoreDelta = reportData ? simulatedScore - reportData.score : 0;
 
   const getHealthColors = useCallback((score) => {
-    if (score >= 750) return { name: "Excellent", class: "green", stroke: "#10b981", percent: (score / 900) * 100 };
-    if (score >= 700) return { name: "Good", class: "green", stroke: "#10b981", percent: (score / 900) * 100 };
-    if (score >= 650) return { name: "Fair", class: "yellow", stroke: "#f59e0b", percent: (score / 900) * 100 };
-    return { name: "Needs Attention", class: "red", stroke: "#ef4444", percent: (score / 900) * 100 };
+    if (score >= 750) return { name: 'Excellent', class: 'green', stroke: '#10b981', percent: (score / 900) * 100 };
+    if (score >= 700) return { name: 'Good', class: 'green', stroke: '#10b981', percent: (score / 900) * 100 };
+    if (score >= 650) return { name: 'Fair', class: 'yellow', stroke: '#f59e0b', percent: (score / 900) * 100 };
+    return { name: 'Needs Attention', class: 'red', stroke: '#ef4444', percent: (score / 900) * 100 };
   }, []);
 
   return {
     lang, setLang, t, planKey,
     currentView, setCurrentView,
     loading, loadingStep,
-    reportData,
-    error,
+    reportData, setReportData,
+    error, setError,
     checkedTasks, setCheckedTasks,
     downloading,
-    selectedPlan,
+    selectedPlan, selectPlan,
+    paymentDone, handlePaymentSuccess,
     simulatorResolutions, setSimulatorResolutions,
     utilizationSlider, setUtilizationSlider,
-    processFile, handleDownloadPDF, handleReset, handleToggleTask, selectPlan,
-    simulatedScore, simulatedScoreDelta, getHealthColors, setReportData,
+    processFile, handleDownloadPDF, handleReset, handleToggleTask,
+    simulatedScore, simulatedScoreDelta, getHealthColors,
   };
 }

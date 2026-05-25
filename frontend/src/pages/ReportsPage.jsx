@@ -1,13 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { apiFetch } from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Eye, Download, FileText, AlertCircle } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8005/api';
-
-function getToken() {
-  return localStorage.getItem('access_token') || '';
-}
 
 function StatusBadge({ status }) {
   const s = (status || '').toLowerCase();
@@ -41,16 +36,7 @@ export default function ReportsPage({ t, setCurrentView, setReportData }) {
     setLoading(true);
     setError(null);
     try {
-      const token = getToken();
-      if (!token) throw new Error('Not authenticated');
-      const res = await fetch(`${API_BASE}/user/reports`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || 'Failed to fetch reports');
-      }
-      const data = await res.json();
+      const data = await apiFetch('/reports');
       setReports(Array.isArray(data) ? data : (data.reports || []));
     } catch (err) {
       console.error('Failed to fetch reports:', err);
@@ -72,17 +58,10 @@ export default function ReportsPage({ t, setCurrentView, setReportData }) {
   const handleDownload = useCallback(async (report, reportId) => {
     setDownloadingId(reportId);
     try {
-      const token = getToken();
-      const res = await fetch(`${API_BASE}/download`, {
+      const blob = await apiFetch('/download', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({ ...report }),
       });
-      if (!res.ok) throw new Error('Failed to download PDF');
-      const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;

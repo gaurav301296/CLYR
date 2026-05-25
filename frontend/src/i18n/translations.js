@@ -58,6 +58,7 @@ export const translations = {
     dragDrop: "CIBIL report PDF yahan drop karo",
     orClick: "Ya computer mein se select karo (max 10MB)",
     safeSecure: "100% private. Report process hoti hai, store nahi hoti.",
+    uploading: "Upload ho rahi hai...",
     analyzing: "Report ho rahi hai... thoda wait karo!",
     scoreSummary: "Tera CIBIL Score",
     score: "Score",

@@ -1,100 +1,135 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import logger from '../lib/logger';
+/**
+ * CLYR v2 — Auth Context (Local JWT)
+ * Uses local SQLite + JWT backend instead of Supabase Auth.
+ * Same interface so components don't need changes.
+ */
+import { createContext, useContext, useState, useEffect } from 'react';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext(undefined);
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8005/api';
-
-async function apiFetch(path, options = {}) {
-  const token = localStorage.getItem('access_token');
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
-  const data = await res.json().catch(() => null);
-  if (!res.ok) {
-    throw new Error(data?.detail || data?.message || `Request failed (${res.status})`);
-  }
-  return data;
-}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Restore session from stored token
+  // Check existing session on mount
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
+    const token = localStorage.getItem('clyr_token');
+    if (token) {
+      // Verify token with backend
+      fetch(`${API_BASE}/user/me`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+        .then(res => {
+          if (res.ok) return res.json();
+          throw new Error('Invalid token');
+        })
+        .then(userData => {
+          setUser(userData);
+          setLoading(false);
+        })
+        .catch(() => {
+          localStorage.removeItem('clyr_token');
+          localStorage.removeItem('clyr_refresh_token');
+          setLoading(false);
+        });
+    } else {
       setLoading(false);
-      return;
     }
-    logger.info('Restoring session from stored token');
-    apiFetch('/user/me')
-      .then((profile) => {
-        setUser(profile);
-        logger.info('Session restored', { email: profile.email });
-      })
-      .catch(() => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        logger.warn('Stored token invalid, cleared session');
-      })
-      .finally(() => setLoading(false));
   }, []);
 
-  const signUp = useCallback(async (email, password, fullName = '') => {
-    logger.info('Signup attempt', { email });
-    const data = await apiFetch('/auth/signup', {
+  async function signUp(email, password, fullName) {
+    const res = await fetch(`${API_BASE}/auth/signup`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, full_name: fullName }),
     });
-    logger.track('signup_success', { email });
-    return data;
-  }, []);
 
-  const signIn = useCallback(async (email, password) => {
-    logger.info('Login attempt', { email });
-    const data = await apiFetch('/auth/login', {
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Signup failed' }));
+      throw new Error(err.detail || 'Signup failed');
+    }
+
+    const data = await res.json();
+    // Auto-login after signup
+    const loginRes = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    if (data.access_token) {
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-      logger.info('Login successful', { email });
-      logger.track('login_success', { email });
+
+    if (loginRes.ok) {
+      const loginData = await loginRes.json();
+      localStorage.setItem('clyr_token', loginData.access_token);
+      if (loginData.refresh_token) {
+        localStorage.setItem('clyr_refresh_token', loginData.refresh_token);
+      }
+      setUser(loginData.user);
     }
-    const profile = { id: data.user?.id, email: data.user?.email, full_name: data.user?.full_name };
-    setUser(profile);
+
     return data;
-  }, []);
+  }
 
-  const signOut = useCallback(async () => {
-    logger.info('Logout');
-    try {
-      await apiFetch('/auth/logout', { method: 'POST' });
-    } catch { /* ignore */ }
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+  async function signIn(email, password) {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Login failed' }));
+      throw new Error(err.detail || 'Login failed');
+    }
+
+    const data = await res.json();
+    localStorage.setItem('clyr_token', data.access_token);
+    if (data.refresh_token) {
+      localStorage.setItem('clyr_refresh_token', data.refresh_token);
+    }
+    setUser(data.user);
+    return data;
+  }
+
+  async function signOut() {
+    const token = localStorage.getItem('clyr_token');
+    if (token) {
+      try {
+        await fetch(`${API_BASE}/auth/logout`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+      } catch {
+        // Ignore network errors on logout
+      }
+    }
+    localStorage.removeItem('clyr_token');
+    localStorage.removeItem('clyr_refresh_token');
     setUser(null);
-    logger.track('logout');
-  }, []);
+  }
 
-  const refreshUser = useCallback(async () => {
-    try {
-      const profile = await apiFetch('/user/me');
-      setUser(profile);
-      return profile;
-    } catch { return null; }
-  }, []);
+  const value = {
+    user,
+    loading,
+    signUp,
+    signIn,
+    signOut,
+  };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut, refreshUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
+
+export default AuthContext;
