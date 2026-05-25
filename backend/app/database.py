@@ -91,7 +91,8 @@ def init_db():
             email TEXT UNIQUE NOT NULL,
             source TEXT DEFAULT 'landing_page',
             converted INTEGER DEFAULT 0,
-            created_at REAL NOT NULL
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS dsa_leads (
