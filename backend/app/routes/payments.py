@@ -156,6 +156,11 @@ async def verify_payment(request: Request):
         "status": "paid",
     }, {"id": order["id"]})
 
+    # Update report paid status if report_id exists
+    report_id = order.get("report_id")
+    if report_id:
+        db_update("reports", {"status": "paid"}, {"id": report_id})
+
     logger.info("Payment verified for order %s", order["id"])
     return {"message": "Payment verified successfully", "status": "paid"}
 

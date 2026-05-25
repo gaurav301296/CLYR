@@ -1,12 +1,10 @@
 /**
  * CLYR v2 — Auth Modal
- * Sign up / Sign in modal with Supabase Auth.
+ * Sign up / Sign in modal with local JWT auth.
  */
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { X, Mail, Lock, User, AlertCircle } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8005/api';
 
 export default function AuthModal({ onClose, initialMode = 'signup' }) {
   const [mode, setMode] = useState(initialMode); // 'signup' | 'login' | 'forgot'
@@ -27,16 +25,15 @@ export default function AuthModal({ onClose, initialMode = 'signup' }) {
     try {
       if (mode === 'signup') {
         await signUp(email, password, fullName);
-        setSuccess('Check your email for a confirmation link.');
+        setSuccess('Account ban gaya! Ab upload shuru karo.');
       } else if (mode === 'login') {
         await signIn(email, password);
         onClose();
       } else if (mode === 'forgot') {
-        // Forgot password — call backend (placeholder for now)
-        setSuccess('Password reset link sent to your email (if account exists).');
+        setSuccess('Password reset link bhej diya gayi hai (agar account exist karta hai).');
       }
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(err.message || 'Kuch galat ho gaya. Phir se try karo.');
     } finally {
       setLoading(false);
     }

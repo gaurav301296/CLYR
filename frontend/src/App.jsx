@@ -7,6 +7,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoadingSpinner from './components/LoadingSpinner';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -62,7 +63,7 @@ function AppContent() {
           <LandingPage t={s.t} selectPlan={s.selectPlan} user={user} />
         );
       case 'payment':
-        return <PaymentPage t={s.t} selectedPlan={s.selectedPlan} planKey={s.planKey} setCurrentView={s.setCurrentView} handlePaymentSuccess={s.handlePaymentSuccess} />;
+        return <PaymentPage t={s.t} selectedPlan={s.selectedPlan} planKey={s.planKey} setCurrentView={s.setCurrentView} handlePaymentSuccess={s.handlePaymentSuccess} reportData={s.reportData} />;
       case 'reports':
         return <ReportsPage t={s.t} setCurrentView={s.setCurrentView} setReportData={s.setReportData} />;
       case 'profile':
@@ -77,30 +78,32 @@ function AppContent() {
   };
 
   return (
-    <div className="app-layout">
-      <Header
-        lang={s.lang}
-        setLang={s.setLang}
-        t={s.t}
-        currentView={s.currentView}
-        setCurrentView={s.setCurrentView}
-        reportData={s.reportData}
-        handleReset={s.handleReset}
-        user={user}
-      />
-      <main id="main-content" className="main-content">
-        {s.error && (
-          <div className="error-banner" role="alert" aria-live="assertive">
-            <span>{s.error}</span>
-            <button onClick={() => s.setError(null)} className="error-dismiss" aria-label="Dismiss error">×</button>
-          </div>
-        )}
-        <Suspense fallback={<LoadingSpinner text="" subtext="" />}>
-          {renderPage()}
-        </Suspense>
-      </main>
-      <Footer t={s.t} />
-    </div>
+    <ErrorBoundary>
+      <div className="app-layout">
+        <Header
+          lang={s.lang}
+          setLang={s.setLang}
+          t={s.t}
+          currentView={s.currentView}
+          setCurrentView={s.setCurrentView}
+          reportData={s.reportData}
+          handleReset={s.handleReset}
+          user={user}
+        />
+        <main id="main-content" className="main-content">
+          {s.error && (
+            <div className="error-banner" role="alert" aria-live="assertive">
+              <span>{s.error}</span>
+              <button onClick={() => s.setError(null)} className="error-dismiss" aria-label="Dismiss error">×</button>
+            </div>
+          )}
+          <Suspense fallback={<LoadingSpinner text="" subtext="" />}>
+            {renderPage()}
+          </Suspense>
+        </main>
+        <Footer t={s.t} />
+      </div>
+    </ErrorBoundary>
   );
 }
 

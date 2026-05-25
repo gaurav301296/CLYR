@@ -1,22 +1,63 @@
 """
 CLYR Local Auth Service
-SQLite-based user store with bcrypt password hashing + JWT tokens.
+SQLite-based user store with bcrypt password hashing + PyJWT tokens.
 Works without Supabase for local development and MVP.
 """
 import os
 import sqlite3
-import hashlib
 import secrets
 import time
 import logging
+from pathlib import Path
 from typing import Optional
+
+import bcrypt
+import jwt as pyjwt
+from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
 
-# Use the shared DB path from db_service
+# ── Config ────────────────────────────────────────────────────────────────────
+
+def _ensure_jwt_secret():
+    """Ensure JWT_SECRET exists: check env, then .env file, then generate and persist."""
+    secret = os.environ.get("JWT_SECRET", "")
+    if secret:
+        return secret
+
+    # Check .env file in backend directory
+    env_path = Path(__file__).parent.parent / ".env"
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if line.startswith("JWT_SECRET=") and len(line) > 11:
+                secret = line[11:].strip().strip('"').strip("'")
+                if secret:
+                    os.environ["JWT_SECRET"] = secret
+                    return secret
+
+    # Generate a new secret and persist it
+    if os.getenv("ENVIRONMENT") == "production":
+        raise RuntimeError("JWT_SECRET must be set in production")
+
+    secret = secrets.token_hex(32)
+    os.environ["JWT_SECRET"] = secret
+    # Append to .env file
+    with open(env_path, "a") as f:
+        f.write(f"\nJWT_SECRET={secret}\n")
+    logger.info("Generated new JWT_SECRET and saved to .env")
+    return secret
+
+JWT_SECRET = _ensure_jwt_secret()
+
+JWT_EXPIRY_HOURS = 24 * 7  # 7 days
+REFRESH_EXPIRY_HOURS = 24 * 30  # 30 days
+
+# ── DB ────────────────────────────────────────────────────────────────────────
+
 def get_db():
-    """Get SQLite connection from shared db_service."""
-    from app.services.db_service import get_db as _get_db
+    """Get SQLite connection from shared database module."""
+    from app.database import get_db as _get_db
     return _get_db()
 
 def init_db():
@@ -28,6 +69,7 @@ def init_db():
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             full_name TEXT DEFAULT '',
+            role TEXT DEFAULT 'user',
             created_at REAL NOT NULL,
             updated_at REAL NOT NULL
         );
@@ -44,79 +86,71 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires ON refresh_tokens(expires_at);
     """)
     db.commit()
-    db.close()
     logger.info("Auth database initialized")
 
+# ── Password Hashing (bcrypt) ─────────────────────────────────────────────────
+
 def _hash_password(password: str) -> str:
-    """Hash password with SHA-256 + salt (lightweight, no bcrypt dependency)."""
-    salt = secrets.token_hex(16)
-    pw_hash = hashlib.sha256((salt + password).encode()).hexdigest()
-    return f"{salt}${pw_hash}"
+    """Hash password with bcrypt (adaptive cost, salt built-in)."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
 
 def _verify_password(password: str, stored_hash: str) -> bool:
-    """Verify password against stored hash."""
+    """Verify password against bcrypt hash."""
     try:
-        salt, pw_hash = stored_hash.split("$", 1)
-        return hashlib.sha256((salt + password).encode()).hexdigest() == pw_hash
-    except (ValueError, AttributeError):
+        return bcrypt.checkpw(password.encode("utf-8"), stored_hash.encode("utf-8"))
+    except (ValueError, TypeError):
         return False
 
+# ── Token Helpers ─────────────────────────────────────────────────────────────
+
 def _generate_id() -> str:
-    """Generate a unique user ID."""
     return f"usr_{secrets.token_hex(12)}"
 
-def _generate_token() -> str:
-    """Generate a secure random token."""
+def _generate_refresh_token() -> str:
     return secrets.token_urlsafe(48)
 
-# JWT-like simple token (not full JWT, but works for our use case)
-# Format: base64(header).base64(payload).signature
-import base64
-import json
-
-JWT_SECRET = os.environ.get("JWT_SECRET", secrets.token_hex(32))
-JWT_EXPIRY = 86400 * 7  # 7 days
-REFRESH_EXPIRY = 86400 * 30  # 30 days
-
-def _create_access_token(user_id: str, email: str) -> str:
-    """Create a simple signed token."""
-    header = base64.urlsafe_b64encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode()).rstrip(b"=").decode()
-    payload = base64.urlsafe_b64encode(json.dumps({
+def create_access_token(user_id: str, email: str) -> str:
+    """Create a signed JWT access token."""
+    now = datetime.now(timezone.utc)
+    payload = {
         "sub": user_id,
         "email": email,
-        "iat": time.time(),
-        "exp": time.time() + JWT_EXPIRY,
-        "type": "access"
-    }).encode()).rstrip(b"=").decode()
-    sig = hashlib.sha256(f"{header}.{payload}.{JWT_SECRET}".encode()).hexdigest()
-    return f"{header}.{payload}.{sig}"
+        "iat": now,
+        "exp": now + timedelta(hours=JWT_EXPIRY_HOURS),
+        "type": "access",
+    }
+    return pyjwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
-def _verify_access_token(token: str) -> Optional[dict]:
-    """Verify and decode an access token."""
+def decode_access_token(token: str) -> Optional[dict]:
+    """Verify and decode a JWT access token. Returns None if invalid/expired."""
     try:
-        parts = token.split(".")
-        if len(parts) != 3:
-            return None
-        header_b64, payload_b64, sig = parts
-        expected_sig = hashlib.sha256(f"{header_b64}.{payload_b64}.{JWT_SECRET}".encode()).hexdigest()
-        if sig != expected_sig:
-            return None
-        # Add padding back
-        padding = 4 - len(payload_b64) % 4
-        if padding != 4:
-            payload_b64 += "=" * padding
-        payload = json.loads(base64.urlsafe_b64decode(payload_b64))
-        if payload.get("exp", 0) < time.time():
-            return None
-        return payload
-    except Exception:
+        return pyjwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+    except (pyjwt.ExpiredSignatureError, pyjwt.InvalidTokenError):
         return None
+
+# ── Password Validation ───────────────────────────────────────────────────────
+
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """Validate password meets minimum requirements."""
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters"
+    if not any(c.isupper() for c in password):
+        return False, "Password must contain at least one uppercase letter"
+    if not any(c.isdigit() for c in password):
+        return False, "Password must contain at least one number"
+    return True, ""
+
+# ── Auth Operations ───────────────────────────────────────────────────────────
 
 def signup_user(email: str, password: str, full_name: str = "") -> dict:
     """Create a new user. Returns user dict."""
+    # Validate password strength
+    valid, msg = validate_password_strength(password)
+    if not valid:
+        raise ValueError(msg)
+
     db = get_db()
     try:
-        # Check if user exists
         existing = db.execute("SELECT id FROM users WHERE email = ?", (email.lower(),)).fetchone()
         if existing:
             raise ValueError("User already exists")
@@ -147,13 +181,13 @@ def login_user(email: str, password: str) -> dict:
             raise ValueError("Invalid credentials")
 
         user_id = row["id"]
-        access_token = _create_access_token(user_id, row["email"])
-        refresh_token = _generate_token()
+        access_token = create_access_token(user_id, row["email"])
+        refresh_token = _generate_refresh_token()
 
         # Store refresh token
         db.execute(
             "INSERT INTO refresh_tokens (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)",
-            (refresh_token, user_id, time.time() + REFRESH_EXPIRY, time.time())
+            (refresh_token, user_id, time.time() + (REFRESH_EXPIRY_HOURS * 3600), time.time())
         )
         db.commit()
 
@@ -169,7 +203,7 @@ def get_user_by_id(user_id: str) -> Optional[dict]:
     """Get user by ID."""
     db = get_db()
     try:
-        row = db.execute("SELECT id, email, full_name, created_at FROM users WHERE id = ?", (user_id,)).fetchone()
+        row = db.execute("SELECT id, email, full_name, role, created_at FROM users WHERE id = ?", (user_id,)).fetchone()
         if row:
             return dict(row)
         return None

@@ -11,8 +11,7 @@ from fastapi import APIRouter, Request, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from app.middleware.auth import get_current_user, get_optional_user
 from app.services.auth_service import signup_user, login_user, get_user_by_id
-from app.services.payment_service import create_order, verify_payment, PLAN_PRICES
-from app.database import db_insert, db_select, db_update, db_count, get_db
+from app.database import db_select, db_update, db_count, get_db
 
 logger = logging.getLogger(__name__)
 
@@ -86,65 +85,6 @@ async def get_report(report_id: str, user: dict = Depends(get_current_user)):
     if not rows:
         raise HTTPException(status_code=404, detail="Report not found")
     return rows[0]
-
-
-# ─── Payment Routes ──────────────────────────────────────────────────────────
-
-@router.post("/payment/create-order")
-async def create_payment_order(
-    plan: str,
-    report_id: str,
-    user: dict = Depends(get_current_user),
-):
-    """Create a Razorpay order for a plan."""
-    if plan not in PLAN_PRICES:
-        raise HTTPException(status_code=400, detail=f"Invalid plan: {plan}")
-
-    try:
-        order = create_order(plan, user["id"], report_id)
-        db_insert("orders", {
-            "id": str(uuid4()),
-            "user_id": user["id"],
-            "report_id": report_id,
-            "plan": plan,
-            "amount": order["amount"],
-            "currency": order["currency"],
-            "razorpay_order_id": order["razorpay_order_id"],
-            "status": "created",
-            "created_at": time.time(),
-            "updated_at": time.time(),
-        })
-        return {
-            "order_id": order["razorpay_order_id"],
-            "amount": order["amount"],
-            "currency": order["currency"],
-            "plan": plan,
-            "razorpay_key_id": os.environ.get("RAZORPAY_KEY_ID", ""),
-            "report_id": report_id,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create order: {str(e)}")
-
-
-@router.post("/payment/verify")
-async def verify_payment_endpoint(
-    req: RazorpayVerifyRequest,
-    user: dict = Depends(get_current_user),
-):
-    """Verify Razorpay payment and update order status."""
-    is_valid = verify_payment(req.razorpay_order_id, req.razorpay_payment_id, req.razorpay_signature)
-    if not is_valid:
-        raise HTTPException(status_code=400, detail="Payment verification failed")
-
-    orders = db_select("orders", filters={"razorpay_order_id": req.razorpay_order_id})
-    if orders:
-        db_update("orders", {
-            "razorpay_payment_id": req.razorpay_payment_id,
-            "razorpay_signature": req.razorpay_signature,
-            "status": "paid",
-        }, {"id": orders[0]["id"]})
-
-    return {"message": "Payment verified successfully", "status": "paid"}
 
 
 # ─── DSA Partner Routes ──────────────────────────────────────────────────────

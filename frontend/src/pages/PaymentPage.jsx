@@ -29,7 +29,7 @@ function loadRazorpayScript() {
   });
 }
 
-export default function PaymentPage({ t, selectedPlan, planKey, setCurrentView, handlePaymentSuccess }) {
+export default function PaymentPage({ t, selectedPlan, planKey, setCurrentView, handlePaymentSuccess, reportData }) {
   const { user } = useAuth();
   const [status, setStatus] = useState('idle'); // idle | loading | processing | success | error
   const [errorMsg, setErrorMsg] = useState('');
@@ -49,7 +49,7 @@ export default function PaymentPage({ t, selectedPlan, planKey, setCurrentView, 
       // Step 1: Create order via apiFetch
       const order = await apiFetch('/payments/create-order', {
         method: 'POST',
-        body: JSON.stringify({ plan: planName }),
+        body: JSON.stringify({ plan: planName, report_id: s.reportData?.id || null }),
       });
 
       if (!order || !order.order_id) {

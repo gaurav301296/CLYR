@@ -21,6 +21,9 @@ class Config:
     openai_base_url: str = "https://openrouter.ai/api/v1"
     openai_model: str = "openrouter/owl-alpha"
 
+    # JWT
+    jwt_secret: str = ""
+
     # Supabase (optional — SQLite used if not configured)
     supabase_url: str = ""
     supabase_anon_key: str = ""
@@ -68,6 +71,9 @@ class Config:
         config.openai_base_url = os.getenv("OPENAI_BASE_URL", config.openai_base_url)
         config.openai_model = os.getenv("OPENAI_MODEL", config.openai_model)
 
+        # JWT
+        config.jwt_secret = os.getenv("JWT_SECRET", "")
+
         # Supabase (optional)
         config.supabase_url = os.getenv("SUPABASE_URL", "")
         config.supabase_anon_key = os.getenv("SUPABASE_ANON_KEY", "")
@@ -108,16 +114,12 @@ class Config:
 
         # Production-specific checks
         if self.environment == "production":
-            if not self.supabase_url:
-                errors.append("SUPABASE_URL is required in production")
-            if not self.supabase_anon_key:
-                errors.append("SUPABASE_ANON_KEY is required in production")
-            if not self.supabase_service_role_key:
-                errors.append("SUPABASE_SERVICE_ROLE_KEY is required in production")
-            if "localhost" in self.cors_origins:
-                errors.append("CORS_ORIGINS should not contain localhost in production")
+            if not self.jwt_secret:
+                errors.append("JWT_SECRET is required in production")
             if self.razorpay_key_id.startswith("rzp_test"):
                 errors.append("Production should use Razorpay LIVE keys, not test keys")
+            if "localhost" in ",".join(self.cors_origins):
+                errors.append("CORS_ORIGINS should not contain localhost in production")
             if not self.sentry_dsn:
                 errors.append("SENTRY_DSN is required in production")
 

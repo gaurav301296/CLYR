@@ -4,10 +4,9 @@
  * Same interface so components don't need changes.
  */
 import { createContext, useContext, useState, useEffect } from 'react';
+import { apiFetch } from '../api/client';
 
 const AuthContext = createContext(undefined);
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8005/api';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -17,14 +16,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const token = localStorage.getItem('clyr_token');
     if (token) {
-      // Verify token with backend
-      fetch(`${API_BASE}/user/me`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      })
-        .then(res => {
-          if (res.ok) return res.json();
-          throw new Error('Invalid token');
-        })
+      apiFetch('/user/me')
         .then(userData => {
           setUser(userData);
           setLoading(false);
@@ -40,50 +32,34 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function signUp(email, password, fullName) {
-    const res = await fetch(`${API_BASE}/auth/signup`, {
+    const data = await apiFetch('/auth/signup', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, full_name: fullName }),
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: 'Signup failed' }));
-      throw new Error(err.detail || 'Signup failed');
-    }
-
-    const data = await res.json();
     // Auto-login after signup
-    const loginRes = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (loginRes.ok) {
-      const loginData = await loginRes.json();
+    try {
+      const loginData = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
       localStorage.setItem('clyr_token', loginData.access_token);
       if (loginData.refresh_token) {
         localStorage.setItem('clyr_refresh_token', loginData.refresh_token);
       }
       setUser(loginData.user);
+    } catch {
+      // Signup succeeded but auto-login failed — user can log in manually
     }
 
     return data;
   }
 
   async function signIn(email, password) {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const data = await apiFetch('/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: 'Login failed' }));
-      throw new Error(err.detail || 'Login failed');
-    }
-
-    const data = await res.json();
     localStorage.setItem('clyr_token', data.access_token);
     if (data.refresh_token) {
       localStorage.setItem('clyr_refresh_token', data.refresh_token);
@@ -93,16 +69,10 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
-    const token = localStorage.getItem('clyr_token');
-    if (token) {
-      try {
-        await fetch(`${API_BASE}/auth/logout`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-      } catch {
-        // Ignore network errors on logout
-      }
+    try {
+      await apiFetch('/auth/logout', { method: 'POST' });
+    } catch {
+      // Ignore network errors on logout
     }
     localStorage.removeItem('clyr_token');
     localStorage.removeItem('clyr_refresh_token');

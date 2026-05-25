@@ -84,12 +84,14 @@ from app.routes.reports import router as reports_router
 from app.routes.waitlist import router as waitlist_router
 from app.routes.admin import router as admin_router
 from app.routes.user_routes import router as user_router
+from app.routes.payments import router as payments_router
 
 app.include_router(health_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(waitlist_router, prefix="/api")
 app.include_router(admin_router, prefix="/api/admin")
 app.include_router(user_router)  # already has /api prefix
+app.include_router(payments_router, prefix="/api/payments")
 
 # ── Serve Frontend (production) ─────────────────────────────────────────────
 frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"

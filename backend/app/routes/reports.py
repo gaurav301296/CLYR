@@ -74,6 +74,8 @@ def _row_to_report_response(row: dict) -> dict:
     }
 
 
+SUPPORTED_LANGUAGES = {'en', 'hi', 'bn', 'te', 'mr', 'ta', 'gu', 'kn', 'ml', 'pa', 'or'}
+
 # ─── Upload Report ────────────────────────────────────────────────────────────
 
 @router.post("/reports/upload")
@@ -87,11 +89,16 @@ async def upload_report(
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
 
+    if lang not in SUPPORTED_LANGUAGES:
+        raise HTTPException(status_code=400, detail="Unsupported language")
+
     safe_name = sanitize_filename(file.filename)
     if not safe_name.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted")
 
     content = await file.read()
+    if not content[:5].startswith(b'%PDF-'):
+        raise HTTPException(status_code=400, detail="Invalid PDF file")
     if len(content) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail=f"File too large. Max {config.max_upload_size_mb} MB.")
     if len(content) == 0:
@@ -273,27 +280,31 @@ async def serve_preview_file(report_id: str, user: dict = Depends(get_current_us
 # ─── PDF Download ─────────────────────────────────────────────────────────────
 
 @router.get("/pdf/download/{report_id}")
-async def download_pdf(request: Request, report_id: str, user: dict = Depends(get_current_user)):
+async def download_pdf(request: Request, report_id: str, user: dict = Depends(get_optional_user)):
     """Download the full (unwatermarked) PDF. Requires a paid order."""
     rows = db_select("reports", filters={"id": report_id})
     if not rows:
         raise HTTPException(status_code=404, detail="Report not found")
 
     report = rows[0]
-    if report.get("user_id") and report["user_id"] != user["id"]:
-        raise HTTPException(status_code=403, detail="You do not own this report")
 
     # Check payment status
-    paid_orders = db_select("orders", filters={
-        "user_id": user["id"],
-        "report_id": report_id,
-        "status": "paid",
-    })
-
-    if not paid_orders:
-        # Check any paid order for this user
+    if user:
+        # Authenticated: check user's paid orders for this report
         paid_orders = db_select("orders", filters={
             "user_id": user["id"],
+            "report_id": report_id,
+            "status": "paid",
+        })
+        if not paid_orders:
+            paid_orders = db_select("orders", filters={
+                "user_id": user["id"],
+                "status": "paid",
+            })
+    else:
+        # Anonymous: check any paid order for this report_id
+        paid_orders = db_select("orders", filters={
+            "report_id": report_id,
             "status": "paid",
         })
 
